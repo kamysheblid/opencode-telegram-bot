@@ -21,7 +21,9 @@ type OptionalGlobalEventClient = {
 
 const RECONNECT_BASE_DELAY_MS = 1000;
 const RECONNECT_MAX_DELAY_MS = 15000;
+let sseIdleTimeoutMs = 30_000;
 const FATAL_NO_STREAM_ERROR = "No stream returned from event subscription";
+const SSE_IDLE_TIMEOUT_ERROR = "SSE stream idle timeout";
 
 let eventStream: AsyncGenerator<unknown, unknown, unknown> | null = null;
 let eventCallback: EventCallback | null = null;
@@ -29,6 +31,12 @@ let isListening = false;
 let activeDirectory: string | null = null;
 let streamAbortController: AbortController | null = null;
 let listenerGeneration = 0;
+
+type StreamReadResult =
+  | { type: "next"; result: IteratorResult<unknown, unknown> }
+  | { type: "error"; error: unknown }
+  | { type: "aborted" }
+  | { type: "timeout" };
 
 function getReconnectDelayMs(attempt: number): number {
   const exponentialDelay = RECONNECT_BASE_DELAY_MS * Math.pow(2, Math.max(0, attempt - 1));
@@ -55,6 +63,64 @@ function waitWithAbort(ms: number, signal: AbortSignal): Promise<boolean> {
 
     signal.addEventListener("abort", onAbort, { once: true });
   });
+}
+
+function createAttemptAbortController(parentSignal: AbortSignal): {
+  controller: AbortController;
+  cleanup: () => void;
+} {
+  const controller = new AbortController();
+
+  if (parentSignal.aborted) {
+    controller.abort();
+    return { controller, cleanup: () => {} };
+  }
+
+  const onAbort = () => controller.abort();
+  parentSignal.addEventListener("abort", onAbort, { once: true });
+
+  return {
+    controller,
+    cleanup: () => parentSignal.removeEventListener("abort", onAbort),
+  };
+}
+
+function readStreamWithIdleTimeout(
+  stream: AsyncGenerator<unknown, unknown, unknown>,
+  signal: AbortSignal,
+): Promise<StreamReadResult> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (result: StreamReadResult) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", onAbort);
+      resolve(result);
+    };
+
+    const onAbort = () => finish({ type: "aborted" });
+    const timeout = setTimeout(() => finish({ type: "timeout" }), sseIdleTimeoutMs);
+
+    if (signal.aborted) {
+      finish({ type: "aborted" });
+      return;
+    }
+
+    signal.addEventListener("abort", onAbort, { once: true });
+
+    stream.next().then(
+      (result) => finish({ type: "next", result }),
+      (error) => finish({ type: "error", error }),
+    );
+  });
+}
+
+function isEventStreamIdleTimeoutError(error: unknown): boolean {
+  return error instanceof Error && error.message === SSE_IDLE_TIMEOUT_ERROR;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -165,14 +231,16 @@ export async function subscribeToEvents(directory: string, callback: EventCallba
     let useLegacyEventsOnce = false;
 
     while (isListening && activeDirectory === directory && !controller.signal.aborted) {
+      let attemptAbort: ReturnType<typeof createAttemptAbortController> | null = null;
       try {
         let subscription: EventStreamSubscription;
+        attemptAbort = createAttemptAbortController(controller.signal);
         if (useLegacyEventsOnce) {
           useLegacyEventsOnce = false;
-          subscription = await subscribeToLegacyEventStream(directory, controller.signal);
+          subscription = await subscribeToLegacyEventStream(directory, attemptAbort.controller.signal);
         } else {
           try {
-            subscription = await subscribeToGlobalEventStream(controller.signal);
+            subscription = await subscribeToGlobalEventStream(attemptAbort.controller.signal);
             logger.debug(`Using global OpenCode event stream for ${directory}`);
           } catch (error) {
             if (controller.signal.aborted || !isListening || activeDirectory !== directory) {
@@ -187,7 +255,7 @@ export async function subscribeToEvents(directory: string, callback: EventCallba
               `Global event stream unavailable for ${directory}, falling back to project event stream`,
               error,
             );
-            subscription = await subscribeToLegacyEventStream(directory, controller.signal);
+            subscription = await subscribeToLegacyEventStream(directory, attemptAbort.controller.signal);
           }
         }
 
@@ -195,43 +263,69 @@ export async function subscribeToEvents(directory: string, callback: EventCallba
         eventStream = subscription.stream;
         let usefulEventCount = 0;
 
-        for await (const event of eventStream) {
-          if (!isListening || activeDirectory !== directory || controller.signal.aborted) {
-            logger.debug(`Event listener stopped or changed directory, breaking loop`);
-            break;
+        try {
+          while (isListening && activeDirectory === directory && !controller.signal.aborted) {
+            const readResult = await readStreamWithIdleTimeout(
+              eventStream,
+              attemptAbort.controller.signal,
+            );
+
+            if (readResult.type === "aborted") {
+              logger.debug(`Event listener stopped or changed directory, breaking loop`);
+              break;
+            }
+
+            if (readResult.type === "timeout") {
+              attemptAbort.controller.abort();
+              const closeStream = eventStream.return?.(undefined);
+              void closeStream?.catch(() => undefined);
+              throw new Error(SSE_IDLE_TIMEOUT_ERROR);
+            }
+
+            if (readResult.type === "error") {
+              throw readResult.error;
+            }
+
+            if (readResult.result.done) {
+              break;
+            }
+
+            const event = readResult.result.value;
+
+            // CRITICAL: Explicitly yield to the event loop BEFORE processing the event
+            // This allows grammY to handle getUpdates between SSE events
+            await new Promise<void>((resolve) => setImmediate(resolve));
+
+            const normalizedEvent = normalizeEvent(event, subscription.source, directory);
+            if (!normalizedEvent) {
+              continue;
+            }
+
+            if (normalizedEvent.type !== "server.connected") {
+              usefulEventCount++;
+            }
+
+            if (eventCallback) {
+              // Use setImmediate to avoid blocking the event loop
+              // and let grammY process incoming Telegram updates
+              const callbackSnapshot = eventCallback;
+              setImmediate(() => {
+                if (
+                  streamAbortController !== controller ||
+                  controller.signal.aborted ||
+                  !isListening ||
+                  activeDirectory !== directory ||
+                  listenerGeneration !== generation
+                ) {
+                  return;
+                }
+
+                callbackSnapshot(normalizedEvent);
+              });
+            }
           }
-
-          // CRITICAL: Explicitly yield to the event loop BEFORE processing the event
-          // This allows grammY to handle getUpdates between SSE events
-          await new Promise<void>((resolve) => setImmediate(resolve));
-
-          const normalizedEvent = normalizeEvent(event, subscription.source, directory);
-          if (!normalizedEvent) {
-            continue;
-          }
-
-          if (normalizedEvent.type !== "server.connected") {
-            usefulEventCount++;
-          }
-
-          if (eventCallback) {
-            // Use setImmediate to avoid blocking the event loop
-            // and let grammY process incoming Telegram updates
-            const callbackSnapshot = eventCallback;
-            setImmediate(() => {
-              if (
-                streamAbortController !== controller ||
-                controller.signal.aborted ||
-                !isListening ||
-                activeDirectory !== directory ||
-                listenerGeneration !== generation
-              ) {
-                return;
-              }
-
-              callbackSnapshot(normalizedEvent);
-            });
-          }
+        } finally {
+          attemptAbort.cleanup();
         }
 
         eventStream = null;
@@ -259,6 +353,7 @@ export async function subscribeToEvents(directory: string, callback: EventCallba
           break;
         }
       } catch (error) {
+        attemptAbort?.cleanup();
         eventStream = null;
 
         if (controller.signal.aborted || !isListening || activeDirectory !== directory) {
@@ -273,7 +368,11 @@ export async function subscribeToEvents(directory: string, callback: EventCallba
 
         reconnectAttempt++;
         const reconnectDelay = getReconnectDelayMs(reconnectAttempt);
-        if (isExpectedOpencodeUnavailableError(error)) {
+        if (isEventStreamIdleTimeoutError(error)) {
+          logger.warn(
+            `Event stream idle timeout for ${directory}, reconnecting in ${reconnectDelay}ms (attempt=${reconnectAttempt})`,
+          );
+        } else if (isExpectedOpencodeUnavailableError(error)) {
           logger.warn(
             `Event stream unavailable for ${directory}, reconnecting in ${reconnectDelay}ms (attempt=${reconnectAttempt})`,
           );
@@ -329,4 +428,8 @@ export function stopEventListening(): void {
   eventStream = null;
   activeDirectory = null;
   logger.info("Event listener stopped");
+}
+
+export function __setSseIdleTimeoutForTests(timeoutMs: number): void {
+  sseIdleTimeoutMs = timeoutMs;
 }

@@ -1,10 +1,36 @@
 import type { Context } from "grammy";
 import { foregroundSessionState } from "../../scheduled-task/foreground-state.js";
 import { attachManager } from "../../attach/manager.js";
+import { reconcileBusyState } from "./busy-reconciliation.js";
 import { t } from "../../i18n/index.js";
 
 export function isForegroundBusy(): boolean {
   return foregroundSessionState.isBusy() || attachManager.isBusy();
+}
+
+function getBusyDirectories(): string[] {
+  const directories = new Set<string>();
+
+  for (const session of foregroundSessionState.getBusySessions()) {
+    directories.add(session.directory);
+  }
+
+  const attached = attachManager.getSnapshot();
+  if (attached?.busy) {
+    directories.add(attached.directory);
+  }
+
+  return [...directories];
+}
+
+export async function reconcileForegroundBusyState(): Promise<void> {
+  if (!isForegroundBusy()) {
+    return;
+  }
+
+  for (const directory of getBusyDirectories()) {
+    await reconcileBusyState(directory);
+  }
 }
 
 export async function replyBusyBlocked(ctx: Context): Promise<void> {

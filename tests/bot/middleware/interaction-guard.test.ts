@@ -5,6 +5,14 @@ import { interactionManager } from "../../../src/interaction/manager.js";
 import { foregroundSessionState } from "../../../src/scheduled-task/foreground-state.js";
 import { t } from "../../../src/i18n/index.js";
 
+const mocked = vi.hoisted(() => ({
+  reconcileForegroundBusyStateMock: vi.fn(),
+}));
+
+vi.mock("../../../src/bot/utils/busy-guard.js", () => ({
+  reconcileForegroundBusyState: mocked.reconcileForegroundBusyStateMock,
+}));
+
 function createTextContext(text: string): Context {
   return {
     chat: { id: 1 },
@@ -35,6 +43,8 @@ describe("interactionGuardMiddleware", () => {
   beforeEach(() => {
     interactionManager.clear("test_setup");
     foregroundSessionState.__resetForTests();
+    mocked.reconcileForegroundBusyStateMock.mockReset();
+    mocked.reconcileForegroundBusyStateMock.mockResolvedValue(undefined);
   });
 
   it("passes through when there is no active interaction", async () => {
@@ -272,6 +282,35 @@ describe("interactionGuardMiddleware", () => {
 
     await interactionGuardMiddleware(ctx, next);
 
+    expect(next).not.toHaveBeenCalled();
+    expect(ctx.reply).toHaveBeenCalledWith(t("bot.session_busy"));
+  });
+
+  it("passes through after on-demand reconciliation clears stale busy state", async () => {
+    foregroundSessionState.markBusy("session-1", "D:\\Projects\\Repo");
+    mocked.reconcileForegroundBusyStateMock.mockImplementationOnce(async () => {
+      foregroundSessionState.markIdle("session-1");
+    });
+
+    const ctx = createTextContext("hello");
+    const next: NextFunction = vi.fn().mockResolvedValue(undefined);
+
+    await interactionGuardMiddleware(ctx, next);
+
+    expect(mocked.reconcileForegroundBusyStateMock).toHaveBeenCalledTimes(1);
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(ctx.reply).not.toHaveBeenCalled();
+  });
+
+  it("keeps blocking after on-demand reconciliation leaves state busy", async () => {
+    foregroundSessionState.markBusy("session-1", "D:\\Projects\\Repo");
+
+    const ctx = createTextContext("hello");
+    const next: NextFunction = vi.fn().mockResolvedValue(undefined);
+
+    await interactionGuardMiddleware(ctx, next);
+
+    expect(mocked.reconcileForegroundBusyStateMock).toHaveBeenCalledTimes(1);
     expect(next).not.toHaveBeenCalled();
     expect(ctx.reply).toHaveBeenCalledWith(t("bot.session_busy"));
   });

@@ -83,6 +83,7 @@ import { reconcileBusyState } from "./utils/busy-reconciliation.js";
 import { finalizeAssistantResponse } from "./utils/finalize-assistant-response.js";
 import { sendTtsResponseForSession } from "./utils/send-tts-response.js";
 import { deliverThinkingMessage } from "./utils/thinking-message.js";
+import { shouldSuppressUserAbortSessionError } from "./utils/abort-error-suppression.js";
 import {
   editRenderedBotPart,
   getTelegramRenderedPartSignature,
@@ -940,6 +941,13 @@ async function ensureEventSubscription(directory: string): Promise<void> {
     ]);
 
     const normalizedMessage = message.trim() || t("common.unknown_error");
+    if (shouldSuppressUserAbortSessionError(sessionId, normalizedMessage)) {
+      logger.debug(`[Bot] Suppressed user-initiated abort error: session=${sessionId}`);
+      foregroundSessionState.markIdle(sessionId);
+      await scheduledTaskRuntime.flushDeferredDeliveries();
+      return;
+    }
+
     const truncatedMessage =
       normalizedMessage.length > 3500
         ? `${normalizedMessage.slice(0, 3497)}...`
