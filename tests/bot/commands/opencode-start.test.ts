@@ -181,4 +181,30 @@ describe("bot/commands/opencode-start", () => {
     );
     expect(mocked.notifyReadyMock).not.toHaveBeenCalled();
   });
+
+  it("does not hang indefinitely when health checks never resolve", async () => {
+    vi.useFakeTimers();
+
+    const ctx = createContext();
+    const childProcess = createChildProcess(456);
+    mocked.startLocalOpencodeServerMock.mockReturnValue(childProcess);
+    mocked.healthMock.mockReturnValue(new Promise(() => {}));
+
+    const commandPromise = opencodeStartCommand(ctx as never);
+    await vi.advanceTimersByTimeAsync(20_000);
+    await commandPromise;
+
+    expect(mocked.startLocalOpencodeServerMock).toHaveBeenCalledWith({
+      host: "localhost",
+      port: 4096,
+    });
+    expect(mocked.editBotTextMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        text: t("opencode_start.started_not_ready", { pid: 456 }),
+      }),
+    );
+    expect(mocked.loggerWarnMock).toHaveBeenCalledWith(
+      "[Bot] OpenCode health check timed out after 3000ms",
+    );
+  });
 });

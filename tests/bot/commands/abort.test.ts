@@ -6,14 +6,22 @@ import { questionManager } from "../../../src/question/manager.js";
 import { permissionManager } from "../../../src/permission/manager.js";
 import { renameManager } from "../../../src/rename/manager.js";
 import { interactionManager } from "../../../src/interaction/manager.js";
+import { foregroundSessionState } from "../../../src/scheduled-task/foreground-state.js";
 import type { Question } from "../../../src/question/types.js";
 import type { PermissionRequest } from "../../../src/permission/types.js";
 import { t } from "../../../src/i18n/index.js";
+import {
+  __resetUserAbortErrorSuppressionForTests,
+  shouldSuppressUserAbortSessionError,
+} from "../../../src/bot/utils/abort-error-suppression.js";
 
 const mocked = vi.hoisted(() => ({
   currentSession: null as { id: string; title: string; directory: string } | null,
   abortMock: vi.fn(),
   statusMock: vi.fn(),
+  clearRunMock: vi.fn(),
+  markAttachedSessionIdleMock: vi.fn(),
+  clearPromptResponseModeMock: vi.fn(),
 }));
 
 vi.mock("../../../src/session/manager.js", () => ({
@@ -27,6 +35,20 @@ vi.mock("../../../src/opencode/client.js", () => ({
       status: mocked.statusMock,
     },
   },
+}));
+
+vi.mock("../../../src/bot/assistant-run-state.js", () => ({
+  assistantRunState: {
+    clearRun: mocked.clearRunMock,
+  },
+}));
+
+vi.mock("../../../src/attach/service.js", () => ({
+  markAttachedSessionIdle: mocked.markAttachedSessionIdleMock,
+}));
+
+vi.mock("../../../src/bot/handlers/prompt.js", () => ({
+  clearPromptResponseMode: mocked.clearPromptResponseModeMock,
 }));
 
 const TEST_QUESTION: Question = {
@@ -61,10 +83,27 @@ function activateInteractionState(): void {
 describe("bot/commands/abort", () => {
   beforeEach(() => {
     clearAllInteractionState("test_setup");
+    foregroundSessionState.__resetForTests();
     mocked.currentSession = null;
     mocked.abortMock.mockReset();
     mocked.statusMock.mockReset();
+    mocked.clearRunMock.mockReset();
+    mocked.markAttachedSessionIdleMock.mockReset();
+    mocked.markAttachedSessionIdleMock.mockResolvedValue(undefined);
+    mocked.clearPromptResponseModeMock.mockReset();
+    __resetUserAbortErrorSuppressionForTests();
   });
+
+  function markSessionBusy(): void {
+    foregroundSessionState.markBusy("session-1", "D:/repo");
+  }
+
+  function expectAbortStateReleased(reason: string): void {
+    expect(foregroundSessionState.isBusy()).toBe(false);
+    expect(mocked.clearRunMock).toHaveBeenCalledWith("session-1", reason);
+    expect(mocked.markAttachedSessionIdleMock).toHaveBeenCalledWith("session-1");
+    expect(mocked.clearPromptResponseModeMock).toHaveBeenCalledWith("session-1");
+  }
 
   it("clears interaction state even when there is no active session", async () => {
     activateInteractionState();
@@ -92,6 +131,7 @@ describe("bot/commands/abort", () => {
       title: "Session",
       directory: "D:/repo",
     };
+    markSessionBusy();
 
     mocked.abortMock.mockResolvedValue({ data: true, error: null });
     mocked.statusMock.mockResolvedValue({
@@ -122,6 +162,39 @@ describe("bot/commands/abort", () => {
     expect(permissionManager.isActive()).toBe(false);
     expect(renameManager.isWaitingForName()).toBe(false);
     expect(interactionManager.getSnapshot()).toBeNull();
+    expectAbortStateReleased("abort_confirmed");
+    expect(shouldSuppressUserAbortSessionError("session-1", "Aborted")).toBe(true);
+  });
+
+  it("marks only Aborted session errors for suppression after user abort", async () => {
+    mocked.currentSession = {
+      id: "session-1",
+      title: "Session",
+      directory: "D:/repo",
+    };
+    markSessionBusy();
+
+    mocked.abortMock.mockResolvedValue({ data: true, error: null });
+    mocked.statusMock.mockResolvedValue({
+      data: {
+        "session-1": { type: "idle" },
+      },
+      error: null,
+    });
+
+    const ctx = {
+      chat: { id: 777 },
+      reply: vi.fn().mockResolvedValue({ message_id: 88 }),
+      api: {
+        editMessageText: vi.fn().mockResolvedValue(undefined),
+      },
+    } as unknown as Context;
+
+    await abortCommand(ctx as never);
+
+    expect(shouldSuppressUserAbortSessionError("session-1", "Model not found")).toBe(false);
+    expect(shouldSuppressUserAbortSessionError("session-1", " Aborted ")).toBe(true);
+    expect(shouldSuppressUserAbortSessionError("session-1", "Aborted")).toBe(false);
   });
 
   it("can abort silently without progress messages", async () => {
@@ -132,6 +205,7 @@ describe("bot/commands/abort", () => {
       title: "Session",
       directory: "D:/repo",
     };
+    markSessionBusy();
 
     mocked.abortMock.mockResolvedValue({ data: true, error: null });
     mocked.statusMock.mockResolvedValue({
@@ -162,5 +236,108 @@ describe("bot/commands/abort", () => {
     expect(permissionManager.isActive()).toBe(false);
     expect(renameManager.isWaitingForName()).toBe(false);
     expect(interactionManager.getSnapshot()).toBeNull();
+    expectAbortStateReleased("abort_confirmed");
+  });
+
+  it("releases local busy state when abort request returns an API error", async () => {
+    mocked.currentSession = {
+      id: "session-1",
+      title: "Session",
+      directory: "D:/repo",
+    };
+    markSessionBusy();
+
+    mocked.abortMock.mockResolvedValue({ data: null, error: new Error("abort failed") });
+
+    const editMessageTextMock = vi.fn().mockResolvedValue(undefined);
+    const ctx = {
+      chat: { id: 777 },
+      reply: vi.fn().mockResolvedValue({ message_id: 88 }),
+      api: {
+        editMessageText: editMessageTextMock,
+      },
+    } as unknown as Context;
+
+    await abortCommand(ctx as never);
+
+    expect(editMessageTextMock).toHaveBeenCalledWith(777, 88, t("stop.warn_unconfirmed"));
+    expectAbortStateReleased("abort_unconfirmed");
+  });
+
+  it("releases local busy state when abort result is not confirmed", async () => {
+    mocked.currentSession = {
+      id: "session-1",
+      title: "Session",
+      directory: "D:/repo",
+    };
+    markSessionBusy();
+
+    mocked.abortMock.mockResolvedValue({ data: false, error: null });
+
+    const editMessageTextMock = vi.fn().mockResolvedValue(undefined);
+    const ctx = {
+      chat: { id: 777 },
+      reply: vi.fn().mockResolvedValue({ message_id: 88 }),
+      api: {
+        editMessageText: editMessageTextMock,
+      },
+    } as unknown as Context;
+
+    await abortCommand(ctx as never);
+
+    expect(editMessageTextMock).toHaveBeenCalledWith(777, 88, t("stop.warn_maybe_finished"));
+    expectAbortStateReleased("abort_maybe_finished");
+  });
+
+  it("releases local busy state when abort request times out", async () => {
+    mocked.currentSession = {
+      id: "session-1",
+      title: "Session",
+      directory: "D:/repo",
+    };
+    markSessionBusy();
+
+    const abortError = new Error("timeout");
+    abortError.name = "AbortError";
+    mocked.abortMock.mockRejectedValue(abortError);
+
+    const editMessageTextMock = vi.fn().mockResolvedValue(undefined);
+    const ctx = {
+      chat: { id: 777 },
+      reply: vi.fn().mockResolvedValue({ message_id: 88 }),
+      api: {
+        editMessageText: editMessageTextMock,
+      },
+    } as unknown as Context;
+
+    await abortCommand(ctx as never);
+
+    expect(editMessageTextMock).toHaveBeenCalledWith(777, 88, t("stop.warn_timeout"));
+    expectAbortStateReleased("abort_error");
+  });
+
+  it("releases local busy state when abort request fails locally", async () => {
+    mocked.currentSession = {
+      id: "session-1",
+      title: "Session",
+      directory: "D:/repo",
+    };
+    markSessionBusy();
+
+    mocked.abortMock.mockRejectedValue(new Error("network failed"));
+
+    const editMessageTextMock = vi.fn().mockResolvedValue(undefined);
+    const ctx = {
+      chat: { id: 777 },
+      reply: vi.fn().mockResolvedValue({ message_id: 88 }),
+      api: {
+        editMessageText: editMessageTextMock,
+      },
+    } as unknown as Context;
+
+    await abortCommand(ctx as never);
+
+    expect(editMessageTextMock).toHaveBeenCalledWith(777, 88, t("stop.warn_local_only"));
+    expectAbortStateReleased("abort_error");
   });
 });
