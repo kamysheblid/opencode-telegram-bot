@@ -13,8 +13,8 @@ import { scheduledTaskRuntime } from "../scheduled-task/runtime.js";
 import { reconcileStoredModelSelection } from "../model/manager.js";
 import { getRuntimeMode } from "../runtime/mode.js";
 import { getRuntimePaths } from "../runtime/paths.js";
-import { clearServiceStateFile } from "../service/manager.js";
-import { getServiceStateFilePathFromEnv, isServiceChildProcess } from "../service/runtime.js";
+import { clearServiceStateFile } from "../runtime/service/manager.js";
+import { getServiceStateFilePathFromEnv, isServiceChildProcess } from "../runtime/service/env.js";
 import { getLogFilePath, initializeLogger, logger } from "../utils/logger.js";
 import { safeBackgroundTask } from "../utils/safe-background-task.js";
 

@@ -74,11 +74,11 @@ vi.mock("../../src/runtime/paths.js", () => ({
   getRuntimePaths: () => ({ envFilePath: ".env" }),
 }));
 
-vi.mock("../../src/service/manager.js", () => ({
+vi.mock("../../src/runtime/service/manager.js", () => ({
   clearServiceStateFile: mocked.clearServiceStateFileMock,
 }));
 
-vi.mock("../../src/service/runtime.js", () => ({
+vi.mock("../../src/runtime/service/env.js", () => ({
   getServiceStateFilePathFromEnv: mocked.getServiceStateFilePathFromEnvMock,
   isServiceChildProcess: mocked.isServiceChildProcessMock,
 }));

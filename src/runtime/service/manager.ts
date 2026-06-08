@@ -3,8 +3,8 @@ import fsPromises from "node:fs/promises";
 import path from "node:path";
 import { exec, spawn } from "node:child_process";
 import { promisify } from "node:util";
-import { getRuntimePaths } from "../runtime/paths.js";
-import { buildServiceChildEnv } from "./runtime.js";
+import { getRuntimePaths } from "../paths.js";
+import { buildServiceChildEnv } from "./env.js";
 import type {
   BotServiceState,
   BotServiceStatus,

@@ -31,7 +31,7 @@ vi.mock("node:child_process", () => ({
   exec: execMock,
 }));
 
-vi.mock("../../src/runtime/paths.js", () => ({
+vi.mock("../../../src/runtime/paths.js", () => ({
   getRuntimePaths: getRuntimePathsMock,
 }));
 
@@ -40,7 +40,7 @@ import {
   getServiceStateFilePath,
   startBotDaemon,
   stopBotDaemon,
-} from "../../src/service/manager.js";
+} from "../../../src/runtime/service/manager.js";
 
 function setPlatform(platform: NodeJS.Platform): () => void {
   const originalPlatform = process.platform;
@@ -51,7 +51,7 @@ function setPlatform(platform: NodeJS.Platform): () => void {
   };
 }
 
-describe("service/manager", () => {
+describe("runtime/service/manager", () => {
   let tempDirPath: string;
   let originalArgv1: string | undefined;
 
