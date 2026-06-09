@@ -1,28 +1,28 @@
 import fs from "node:fs/promises";
 import { readFile } from "node:fs/promises";
 
-import { cleanupBotRuntime, createBot } from "../bot/index.js";
-import { config } from "../config.js";
-import { opencodeAutoRestartService } from "../opencode/auto-restart.js";
+import { cleanupBotRuntime, createBot } from "../../bot/index.js";
+import { config } from "../../config.js";
+import { opencodeAutoRestartService } from "../../opencode/auto-restart.js";
 import {
   notifyOpencodeReadyIfHealthy,
   registerOpenCodeReadyRefreshHandler,
-} from "../opencode/ready-refresh.js";
-import { loadSettings } from "../settings/manager.js";
-import { scheduledTaskRuntime } from "../scheduled-task/runtime.js";
-import { reconcileStoredModelSelection } from "../model/manager.js";
-import { getRuntimeMode } from "../runtime/mode.js";
-import { getRuntimePaths } from "../runtime/paths.js";
-import { clearServiceStateFile } from "../runtime/service/manager.js";
-import { getServiceStateFilePathFromEnv, isServiceChildProcess } from "../runtime/service/env.js";
-import { getLogFilePath, initializeLogger, logger } from "../utils/logger.js";
-import { safeBackgroundTask } from "../utils/safe-background-task.js";
+} from "../../opencode/ready-refresh.js";
+import { loadSettings } from "../../settings/manager.js";
+import { scheduledTaskRuntime } from "../../scheduled-task/runtime.js";
+import { reconcileStoredModelSelection } from "../../model/manager.js";
+import { getRuntimeMode } from "../../runtime/mode.js";
+import { getRuntimePaths } from "../../runtime/paths.js";
+import { clearServiceStateFile } from "../../runtime/service/manager.js";
+import { getServiceStateFilePathFromEnv, isServiceChildProcess } from "../../runtime/service/env.js";
+import { getLogFilePath, initializeLogger, logger } from "../../utils/logger.js";
+import { safeBackgroundTask } from "../../utils/safe-background-task.js";
 
 const SHUTDOWN_TIMEOUT_MS = 5000;
 
 async function getBotVersion(): Promise<string> {
   try {
-    const packageJsonPath = new URL("../../package.json", import.meta.url);
+    const packageJsonPath = new URL("../../../package.json", import.meta.url);
     const packageJsonContent = await readFile(packageJsonPath, "utf-8");
     const packageJson = JSON.parse(packageJsonContent) as { version?: string };
 

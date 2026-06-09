@@ -94,7 +94,7 @@ vi.mock("../../src/utils/logger.js", () => ({
   },
 }));
 
-import { startBotApp } from "../../src/app/start-bot-app.js";
+import { startBotApp } from "../../src/app/bootstrap/start-bot-app.js";
 
 function createBot() {
   return {
