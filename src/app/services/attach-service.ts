@@ -1,7 +1,7 @@
 import type { Bot, Context } from "grammy";
 import { opencodeClient } from "../../opencode/client.js";
 import { isOpencodeServerHealthy } from "../../opencode/ready-refresh.js";
-import { summaryAggregator } from "../../summary/aggregator.js";
+import { summaryAggregator } from "../managers/summary-aggregation-manager.js";
 import { pinnedMessageManager } from "../../bot/pinned/pinned-message-manager.js";
 import { keyboardManager } from "../../bot/keyboards/keyboard-manager.js";
 import { questionManager } from "../managers/question-manager.js";

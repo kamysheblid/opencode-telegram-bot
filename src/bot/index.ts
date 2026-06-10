@@ -74,10 +74,10 @@ import { clearAllInteractionState } from "../app/managers/interaction-manager.js
 import { keyboardManager } from "./keyboards/keyboard-manager.js";
 import { stopEventListening, subscribeToEvents } from "../opencode/events.js";
 import { opencodeReadyLifecycle } from "../opencode/ready-lifecycle.js";
-import { summaryAggregator } from "../summary/aggregator.js";
-import { formatToolInfo } from "../summary/formatter.js";
-import { renderSubagentCards } from "../summary/subagent-formatter.js";
-import { ToolMessageBatcher } from "../summary/tool-message-batcher.js";
+import { summaryAggregator } from "../app/managers/summary-aggregation-manager.js";
+import { formatToolInfo } from "../app/formatters/summary-formatter.js";
+import { renderSubagentCards } from "../app/formatters/subagent-formatter.js";
+import { ToolMessageBatcher } from "../app/formatters/tool-message-batcher.js";
 import { getCurrentSession } from "../app/services/session-service.js";
 import { ingestSessionInfoForCache } from "../app/services/session-cache-service.js";
 import { logger } from "../utils/logger.js";

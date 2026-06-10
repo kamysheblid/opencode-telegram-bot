@@ -1,8 +1,15 @@
-import { formatModelDisplayName } from "../bot/pinned/pinned-message-format.js";
-import { t } from "../i18n/index.js";
-import { formatCompactToolInfo } from "./formatter.js";
-import type { SubagentInfo } from "./aggregator.js";
-import type { ToolInfo } from "./aggregator.js";
+import { t } from "../../i18n/index.js";
+import { formatCompactToolInfo } from "./summary-formatter.js";
+import type { SubagentInfo } from "../managers/summary-aggregation-manager.js";
+import type { ToolInfo } from "../managers/summary-aggregation-manager.js";
+
+function formatModelDisplayName(providerID?: string | null, modelID?: string | null): string {
+  if (providerID && modelID) {
+    return `${providerID}/${modelID}`;
+  }
+
+  return t("pinned.unknown");
+}
 
 function shouldPreferInputDetails(tool: string, input?: { [key: string]: unknown }): boolean {
   if (!input) {

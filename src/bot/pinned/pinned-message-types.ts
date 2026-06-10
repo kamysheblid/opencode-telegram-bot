@@ -1,3 +1,7 @@
+import type { FileChange } from "../../app/types/summary.js";
+
+export type { FileChange } from "../../app/types/summary.js";
+
 /**
  * Token information from AssistantMessage
  */
@@ -7,15 +11,6 @@ export interface TokensInfo {
   reasoning: number;
   cacheRead: number;
   cacheWrite: number;
-}
-
-/**
- * File change info from OpenCode session diff
- */
-export interface FileChange {
-  file: string;
-  additions: number;
-  deletions: number;
 }
 
 /**

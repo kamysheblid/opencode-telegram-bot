@@ -1,6 +1,6 @@
-import { parseTelegramBlocks } from "../bot/render/block-parser.js";
-import { normalizeMarkdownForTelegramRendering } from "../bot/render/markdown-normalizer.js";
-import type { InlineNode, TelegramBlock } from "../bot/render/types.js";
+import { parseTelegramBlocks } from "./block-parser.js";
+import { normalizeMarkdownForTelegramRendering } from "./markdown-normalizer.js";
+import type { InlineNode, TelegramBlock } from "./types.js";
 
 /**
  * Escapes characters reserved in Telegram MarkdownV2.

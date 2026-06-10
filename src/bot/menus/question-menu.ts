@@ -3,7 +3,7 @@ import { questionManager } from "../../app/managers/question-manager.js";
 import { opencodeClient } from "../../opencode/client.js";
 import { getCurrentProject } from "../../app/stores/settings-store.js";
 import { getCurrentSession } from "../../app/services/session-service.js";
-import { summaryAggregator } from "../../summary/aggregator.js";
+import { summaryAggregator } from "../../app/managers/summary-aggregation-manager.js";
 import { interactionManager } from "../../app/managers/interaction-manager.js";
 import { logger } from "../../utils/logger.js";
 import { safeBackgroundTask } from "../../utils/safe-background-task.js";

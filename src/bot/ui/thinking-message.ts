@@ -1,4 +1,4 @@
-import type { ToolMessageBatcher } from "../../summary/tool-message-batcher.js";
+import type { ToolMessageBatcher } from "../../app/formatters/tool-message-batcher.js";
 import { t } from "../../i18n/index.js";
 
 interface ThinkingMessageOptions {

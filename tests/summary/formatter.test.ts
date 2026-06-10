@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   formatSummary,
   formatSummaryWithMode,
+} from "../../src/bot/render/summary-message-formatter.js";
+import {
   formatToolInfo,
   prepareCodeFile,
-} from "../../src/summary/formatter.js";
+} from "../../src/app/formatters/summary-formatter.js";
 
 const mocked = vi.hoisted(() => ({
   getCurrentProjectMock: vi.fn(),

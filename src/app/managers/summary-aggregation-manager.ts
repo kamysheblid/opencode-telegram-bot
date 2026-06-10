@@ -1,12 +1,12 @@
 import { Event, ToolState } from "@opencode-ai/sdk/v2";
 import type { Bot } from "grammy";
-import type { CodeFileData } from "./formatter.js";
-import { normalizePathForDisplay, prepareCodeFile } from "./formatter.js";
-import type { Question } from "../app/types/question.js";
-import type { PermissionRequest } from "../app/types/permission.js";
-import type { FileChange } from "../bot/pinned/pinned-message-types.js";
-import { logger } from "../utils/logger.js";
-import { getCurrentProject } from "../app/stores/settings-store.js";
+import type { CodeFileData } from "../formatters/summary-formatter.js";
+import { normalizePathForDisplay, prepareCodeFile } from "../formatters/summary-formatter.js";
+import type { Question } from "../types/question.js";
+import type { PermissionRequest } from "../types/permission.js";
+import type { FileChange } from "../types/summary.js";
+import { logger } from "../../utils/logger.js";
+import { getCurrentProject } from "../stores/settings-store.js";
 
 export interface SummaryInfo {
   sessionId: string;

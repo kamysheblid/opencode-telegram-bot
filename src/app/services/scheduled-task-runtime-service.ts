@@ -3,7 +3,7 @@ import { config } from "../../config.js";
 import {
   escapePlainTextForTelegramMarkdownV2,
   formatSummaryWithMode,
-} from "../../summary/formatter.js";
+} from "../../bot/render/summary-message-formatter.js";
 import { t } from "../../i18n/index.js";
 import { logger } from "../../utils/logger.js";
 import { safeBackgroundTask } from "../../utils/safe-background-task.js";

@@ -10,7 +10,7 @@ import { formatVariantForButton } from "../../app/services/variant-selection-ser
 import { createMainKeyboard } from "../keyboards/main-reply-keyboard.js";
 import { keyboardManager } from "../keyboards/keyboard-manager.js";
 import { pinnedMessageManager } from "../pinned/pinned-message-manager.js";
-import { summaryAggregator } from "../../summary/aggregator.js";
+import { summaryAggregator } from "../../app/managers/summary-aggregation-manager.js";
 import { stopEventListening } from "../../opencode/events.js";
 import { interactionManager } from "../../app/managers/interaction-manager.js";
 import { clearAllInteractionState } from "../../app/managers/interaction-manager.js";

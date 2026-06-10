@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { renderSubagentCards } from "../../src/summary/subagent-formatter.js";
+import { renderSubagentCards } from "../../src/app/formatters/subagent-formatter.js";
 import { resetRuntimeLocale, setRuntimeLocale } from "../../src/i18n/index.js";
 
 describe("summary/subagent-formatter", () => {
@@ -221,7 +221,7 @@ describe("summary/subagent-formatter", () => {
         cost: 0,
         currentTool: "read",
         currentToolInput: {
-          filePath: "src/summary/subagent-formatter.ts",
+          filePath: "src/app/formatters/subagent-formatter.ts",
         },
         currentToolTitle: "22460fc65b183e6921717bba0c84ccfcf4b57982",
         updatedAt: Date.now(),
@@ -254,7 +254,7 @@ describe("summary/subagent-formatter", () => {
     ]);
 
     expect(text).toContain("🔍 grep [WARN]|[ERROR]");
-    expect(text).toContain("📖 read src/summary/subagent-formatter.ts");
+    expect(text).toContain("📖 read src/app/formatters/subagent-formatter.ts");
     expect(text).toContain("📁 glob **/*.ts");
     expect(text).not.toContain("22460fc65b183e6921717bba0c84ccfcf4b57982");
   });

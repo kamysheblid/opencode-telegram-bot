@@ -4,7 +4,7 @@ const mocked = vi.hoisted(() => ({
   convertToTelegramMarkdownV2: vi.fn(),
 }));
 
-vi.mock("../../src/summary/markdown-to-telegram-v2.js", () => ({
+vi.mock("../../src/bot/render/markdown-to-telegram-v2.js", () => ({
   convertToTelegramMarkdownV2: mocked.convertToTelegramMarkdownV2,
 }));
 
@@ -18,7 +18,9 @@ describe("summary/formatter markdown fallback", () => {
       throw new Error("conversion failed");
     });
 
-    const { formatSummaryWithMode } = await import("../../src/summary/formatter.js");
+    const { formatSummaryWithMode } = await import(
+      "../../src/bot/render/summary-message-formatter.js"
+    );
 
     expect(formatSummaryWithMode("**raw** text!", "markdown")).toEqual(["**raw** text!"]);
     expect(mocked.convertToTelegramMarkdownV2).toHaveBeenCalledOnce();

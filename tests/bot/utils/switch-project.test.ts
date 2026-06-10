@@ -29,7 +29,7 @@ vi.mock("../../../src/app/stores/settings-store.js", () => ({
 vi.mock("../../../src/app/services/session-service.js", () => ({
   clearSession: mocked.clearSessionMock,
 }));
-vi.mock("../../../src/summary/aggregator.js", () => ({
+vi.mock("../../../src/app/managers/summary-aggregation-manager.js", () => ({
   summaryAggregator: { clear: mocked.summaryAggregatorClearMock },
 }));
 vi.mock("../../../src/app/managers/interaction-manager.js", () => ({

@@ -37,7 +37,7 @@ vi.mock("../../../src/app/managers/interaction-manager.js", () => ({
   clearAllInteractionState: vi.fn(),
 }));
 
-vi.mock("../../../src/summary/aggregator.js", () => ({
+vi.mock("../../../src/app/managers/summary-aggregation-manager.js", () => ({
   summaryAggregator: { clear: vi.fn() },
 }));
 

@@ -79,7 +79,7 @@ vi.mock("../../../src/bot/keyboards/keyboard-manager.js", () => ({
   },
 }));
 
-vi.mock("../../../src/summary/aggregator.js", () => ({
+vi.mock("../../../src/app/managers/summary-aggregation-manager.js", () => ({
   summaryAggregator: {
     setSession: mocked.setSessionSummaryMock,
     setBotAndChatId: mocked.setBotAndChatIdMock,

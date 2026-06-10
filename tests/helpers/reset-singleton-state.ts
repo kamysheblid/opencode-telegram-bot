@@ -61,7 +61,7 @@ export async function resetSingletonState(): Promise<void> {
     import("../../src/app/managers/permission-manager.js"),
     import("../../src/app/managers/rename-manager.js"),
     import("../../src/app/managers/interaction-manager.js"),
-    import("../../src/summary/aggregator.js"),
+    import("../../src/app/managers/summary-aggregation-manager.js"),
     import("../../src/bot/keyboards/keyboard-manager.js"),
     import("../../src/bot/pinned/pinned-message-manager.js"),
     import("../../src/opencode/events.js"),

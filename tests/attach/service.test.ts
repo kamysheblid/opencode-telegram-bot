@@ -70,7 +70,7 @@ vi.mock("../../src/opencode/events.js", () => ({
   stopEventListening: mocked.stopEventListeningMock,
 }));
 
-vi.mock("../../src/summary/aggregator.js", () => ({
+vi.mock("../../src/app/managers/summary-aggregation-manager.js", () => ({
   summaryAggregator: {
     setSession: mocked.setSessionSummaryMock,
     setBotAndChatId: mocked.setBotAndChatIdMock,

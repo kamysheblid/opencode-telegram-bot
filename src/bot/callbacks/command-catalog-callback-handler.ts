@@ -10,7 +10,7 @@ import type { SessionInfo } from "../../app/types/session.js";
 import { ingestSessionInfoForCache } from "../../app/services/session-cache-service.js";
 import { interactionManager } from "../../app/managers/interaction-manager.js";
 import type { InteractionState } from "../../app/types/interaction.js";
-import { summaryAggregator } from "../../summary/aggregator.js";
+import { summaryAggregator } from "../../app/managers/summary-aggregation-manager.js";
 import { getStoredAgent, resolveProjectAgent } from "../../app/services/agent-selection-service.js";
 import { getStoredModel } from "../../app/services/model-selection-service.js";
 import { safeBackgroundTask } from "../../utils/safe-background-task.js";

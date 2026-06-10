@@ -1,6 +1,6 @@
 import { Context, InlineKeyboard } from "grammy";
 import { permissionManager } from "../../app/managers/permission-manager.js";
-import { summaryAggregator } from "../../summary/aggregator.js";
+import { summaryAggregator } from "../../app/managers/summary-aggregation-manager.js";
 import { interactionManager } from "../../app/managers/interaction-manager.js";
 import { logger } from "../../utils/logger.js";
 import type { PermissionRequest } from "../../app/types/permission.js";

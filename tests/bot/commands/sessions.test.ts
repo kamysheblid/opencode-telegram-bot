@@ -55,7 +55,7 @@ vi.mock("../../../src/app/services/session-service.js", () => ({
   setCurrentSession: mocked.setCurrentSessionMock,
 }));
 
-vi.mock("../../../src/summary/aggregator.js", () => ({
+vi.mock("../../../src/app/managers/summary-aggregation-manager.js", () => ({
   summaryAggregator: {
     clear: mocked.clearSummaryMock,
   },

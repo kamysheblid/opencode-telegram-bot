@@ -1,5 +1,5 @@
-import type { CodeFileData } from "./formatter.js";
-import { logger } from "../utils/logger.js";
+import type { CodeFileData } from "./summary-formatter.js";
+import { logger } from "../../utils/logger.js";
 
 type SendTextCallback = (sessionId: string, text: string) => Promise<void>;
 type SendFileCallback = (sessionId: string, fileData: CodeFileData) => Promise<void>;

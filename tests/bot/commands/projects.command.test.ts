@@ -34,7 +34,7 @@ vi.mock("../../../src/app/services/session-service.js", () => ({
   clearSession: vi.fn(),
 }));
 
-vi.mock("../../../src/summary/aggregator.js", () => ({
+vi.mock("../../../src/app/managers/summary-aggregation-manager.js", () => ({
   summaryAggregator: { clear: vi.fn() },
 }));
 

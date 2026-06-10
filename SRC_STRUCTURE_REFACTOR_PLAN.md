@@ -503,7 +503,7 @@ src/bot/
   4. Если `/settings` будет добавлена позже: создать `bot/commands/settings-command.ts` и `bot/menus/settings-menu.ts`.
   5. Запустить settings-related тесты и полный build.
 
-- [ ] **Этап 22. Summary pipeline**
+- [x] **Этап 22. Summary pipeline**
 
   1. Перенести `summary/aggregator.ts` -> `app/managers/summary-aggregation-manager.ts`.
   2. Перенести `summary/formatter.ts`, `markdown-to-telegram-v2.ts`, `subagent-formatter.ts`, `tool-message-batcher.ts` в `app/formatters/*` или оставить Telegram-specific rendering в `bot/render` после проверки зависимостей.
