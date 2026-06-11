@@ -35,6 +35,7 @@ const mocked = vi.hoisted(() => ({
   resolveProjectAgentMock: vi.fn(async () => "build"),
   attachToSessionMock: vi.fn(),
   ensureEventSubscriptionMock: vi.fn(),
+  replyWithInlineMenuFallbackMock: vi.fn(),
 }));
 
 vi.mock("../../../src/opencode/client.js", () => ({
@@ -101,6 +102,18 @@ vi.mock("../../../src/app/services/attach-service.js", () => ({
 vi.mock("../../../src/utils/safe-background-task.js", () => ({
   safeBackgroundTask: vi.fn(),
 }));
+
+vi.mock("../../../src/bot/menus/inline-menu.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../src/bot/menus/inline-menu.js")>();
+
+  return {
+    ...actual,
+    replyWithInlineMenuFallback: vi.fn(async (...args: Parameters<typeof actual.replyWithInlineMenuFallback>) => {
+      mocked.replyWithInlineMenuFallbackMock(...args);
+      return actual.replyWithInlineMenuFallback(...args);
+    }),
+  };
+});
 
 const safeBackgroundTaskMock = vi.mocked(safeBackgroundTask);
 
@@ -245,6 +258,7 @@ describe("bot/commands/sessions", () => {
       restoredPermissions: 0,
     });
     mocked.ensureEventSubscriptionMock.mockReset();
+    mocked.replyWithInlineMenuFallbackMock.mockReset();
     safeBackgroundTaskMock.mockReset();
   });
 
@@ -276,6 +290,21 @@ describe("bot/commands/sessions", () => {
 
     expect(mocked.sessionListMock).not.toHaveBeenCalled();
     expect(ctx.reply).toHaveBeenCalledWith(t("bot.session_busy"));
+  });
+
+  it("renders session fallback text with the inline menu request", async () => {
+    const sessions = Array.from({ length: 3 }, (_, index) => createSession(index));
+    mocked.sessionListMock.mockResolvedValueOnce({ data: sessions, error: null });
+
+    const ctx = createCommandContext();
+    await sessionsCommand(ctx as never);
+
+    expect(mocked.replyWithInlineMenuFallbackMock).toHaveBeenCalledWith(
+      ctx,
+      expect.objectContaining({
+        fallbackText: expect.stringContaining("1. Session 1"),
+      }),
+    );
   });
 
   it("handles next-page callback and renders second page with prev button", async () => {

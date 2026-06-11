@@ -107,7 +107,7 @@ export function buildBackgroundSessionOpenKeyboard(
   );
 }
 
-function formatSessionsSelectText(page: number): string {
+function buildSessionsSelectText(page: number): string {
   if (page === 0) {
     return t("sessions.select");
   }
@@ -178,7 +178,24 @@ export function buildSessionSelectionMenuView(
   pageSize: number,
 ): { text: string; keyboard: InlineKeyboard } {
   return {
-    text: formatSessionsSelectText(pageData.page),
+    text: buildSessionsSelectText(pageData.page),
     keyboard: buildSessionsKeyboard(pageData, pageSize),
   };
+}
+
+export function buildSessionsFallbackText(pageData: SessionPage, pageSize: number): string {
+  const localeForDate = getDateLocale();
+  const pageStartIndex = pageData.page * pageSize;
+  const lines = [buildSessionsSelectText(pageData.page)];
+
+  pageData.sessions.forEach((session, index) => {
+    const date = new Date(session.time.created).toLocaleDateString(localeForDate);
+    lines.push(`${pageStartIndex + index + 1}. ${session.title} (${date})`);
+  });
+
+  if (pageData.page > 0 || pageData.hasNext) {
+    lines.push(`Page ${pageData.page + 1}`);
+  }
+
+  return lines.join("\n");
 }

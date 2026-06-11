@@ -182,3 +182,40 @@ export async function buildProjectsMenuView(
     keyboard: await buildProjectsKeyboard(projects, normalizedPage),
   };
 }
+
+export function buildProjectsFallbackText(projects: ProjectInfo[], page: number): string {
+  const pageSize = config.bot.projectsListLimit;
+  const { page: normalizedPage, totalPages } = calculateProjectsPaginationRange(
+    projects.length,
+    page,
+    pageSize,
+  );
+  const currentProject = getCurrentProject();
+  const currentProjectName = currentProject?.name || currentProject?.worktree;
+  const visibleProjects = projects.slice(
+    normalizedPage * pageSize,
+    Math.min((normalizedPage + 1) * pageSize, projects.length),
+  );
+  const baseLines = [
+    currentProjectName
+      ? t("projects.select_with_current", { project: currentProjectName })
+      : t("projects.select"),
+  ];
+
+  const projectLines = visibleProjects.map((project, index) => {
+    const prefix = `${index + 1 + normalizedPage * pageSize}. `;
+    const name = project.name || project.worktree;
+    return `${prefix}${name}`;
+  });
+
+  if (totalPages > 1) {
+    projectLines.push(
+      t("projects.page_indicator", {
+        current: String(normalizedPage + 1),
+        total: String(totalPages),
+      }),
+    );
+  }
+
+  return [...baseLines, "", ...projectLines].join("\n");
+}

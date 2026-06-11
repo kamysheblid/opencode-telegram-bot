@@ -10,7 +10,7 @@ import {
 import { opencodeReadyLifecycle } from "../opencode/ready-lifecycle.js";
 import { logger } from "../utils/logger.js";
 import { safeBackgroundTask } from "../utils/safe-background-task.js";
-import { withTelegramRateLimitRetry } from "../utils/telegram-rate-limit-retry.js";
+import { formatTelegramError, withTelegramRateLimitRetry } from "../utils/telegram-rate-limit-retry.js";
 import { registerCallbackRouter } from "./callbacks/callback-router.js";
 import { authMiddleware } from "./middleware/auth.js";
 import { interactionGuardMiddleware } from "./middleware/interaction-guard.js";
@@ -84,8 +84,8 @@ export function createBot(): Bot<Context> {
     if (method === "getUpdates") {
       const now = Date.now();
       const timeSinceLast = now - lastGetUpdatesTime;
-      logger.debug(`[Bot API] getUpdates called (${timeSinceLast}ms since last)`);
       lastGetUpdatesTime = now;
+      logger.debug(`[Bot API] getUpdates called (${timeSinceLast}ms since last)`);
       return prev(method, payload, signal);
     }
 
@@ -95,9 +95,11 @@ export function createBot(): Bot<Context> {
 
     return withTelegramRateLimitRetry(() => prev(method, payload, signal), {
       maxRetries: 5,
+      fallbackDelayMs: 1000,
+      maxDelayMs: 30_000,
       onRetry: ({ attempt, retryAfterMs, error }) => {
         logger.warn(
-          `[Bot API] Telegram rate limit on ${method}, retrying in ${retryAfterMs}ms (attempt=${attempt})`,
+          `[Bot API] Telegram retryable failure on ${method}, retrying in ${retryAfterMs}ms (attempt=${attempt}): ${formatTelegramError(error)}`,
           error,
         );
       },
@@ -149,12 +151,16 @@ export function createBot(): Bot<Context> {
         return;
       }
 
-      logger.warn("[Bot] Could not clear global commands:", result.error);
+      logger.warn(
+        "[Bot] Could not clear global commands:",
+        result.error,
+        formatTelegramError(result.error),
+      );
     },
   });
 
   bot.catch((err) => {
-    logger.error("[Bot] Unhandled error in bot:", err);
+    logger.error("[Bot] Unhandled error in bot:", err, formatTelegramError(err));
     clearAllInteractionState("bot_unhandled_error");
     if (err.ctx) {
       logger.error(
