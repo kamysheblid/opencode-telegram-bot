@@ -55,11 +55,13 @@ import {
   type BackgroundSessionNotification,
 } from "../../app/managers/background-session-manager.js";
 import { buildBackgroundSessionOpenKeyboard } from "../menus/session-selection-menu.js";
+import { addContextHeader, formatContextHeader } from "../messages/session-context-header.js";
 import { questionManager } from "../../app/managers/question-manager.js";
 import { showCurrentQuestion } from "../menus/question-menu.js";
 import { showPermissionRequest } from "../menus/permission-menu.js";
 import { clearAllInteractionState } from "../../app/managers/interaction-manager.js";
 import { stopEventListening, subscribeToEvents } from "../../opencode/events.js";
+import { replyDeliveryRegistry, type ReplyTargetInfo } from "../../app/managers/reply-delivery-registry.js";
 
 const TELEGRAM_DOCUMENT_CAPTION_MAX_LENGTH = 1024;
 const RESPONSE_STREAM_THROTTLE_MS = config.bot.responseStreamThrottleMs;
@@ -95,6 +97,8 @@ class EventSubscriptionService implements BotEventSubscriptionService {
   private readonly responseStreamer: ResponseStreamer;
   private readonly toolCallStreamer: ToolCallStreamer;
   private readonly toolMessageBatcher: ToolMessageBatcher;
+  /** Track accumulated text parts for reply-target sessions (sessionId → messageId → text) */
+  private readonly replyTargetTexts = new Map<string, Map<string, string>>();
 
   constructor() {
     this.toolMessageBatcher = new ToolMessageBatcher({
@@ -137,11 +141,15 @@ class EventSubscriptionService implements BotEventSubscriptionService {
 
           const keyboard = this.getCurrentReplyKeyboard();
 
+          // Prepend context header to caption for reply-to-session routing
+          let caption = fileData.caption || "";
+          caption = this.prepareDocumentCaption(addContextHeader(caption));
+
           await this.botInstance.api.sendDocument(
             this.chatIdInstance,
             new InputFile(tempFilePath),
             {
-              caption: fileData.caption,
+              caption,
               disable_notification: true,
               ...(keyboard ? { reply_markup: keyboard } : {}),
             },
@@ -168,9 +176,14 @@ class EventSubscriptionService implements BotEventSubscriptionService {
           throw new Error(`Tool stream session mismatch for send: ${sessionId}`);
         }
 
-        const sentMessage = await this.botInstance.api.sendMessage(this.chatIdInstance, text, {
-          disable_notification: true,
-        });
+        const headeredText = addContextHeader(text);
+        const sentMessage = await this.botInstance.api.sendMessage(
+          this.chatIdInstance,
+          headeredText,
+          {
+            disable_notification: true,
+          },
+        );
 
         return sentMessage.message_id;
       },
@@ -185,7 +198,12 @@ class EventSubscriptionService implements BotEventSubscriptionService {
         }
 
         try {
-          await this.botInstance.api.editMessageText(this.chatIdInstance, messageId, text);
+          const headeredText = addContextHeader(text);
+          await this.botInstance.api.editMessageText(
+            this.chatIdInstance,
+            messageId,
+            headeredText,
+          );
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
@@ -234,6 +252,7 @@ class EventSubscriptionService implements BotEventSubscriptionService {
     this.toolCallStreamer.clearAll(reason);
     this.toolMessageBatcher.clearAll(reason);
     this.sessionCompletionTasks.clear();
+    this.replyTargetTexts.clear();
     assistantRunState.clearAll(reason);
   }
 
@@ -274,7 +293,8 @@ class EventSubscriptionService implements BotEventSubscriptionService {
         return;
       }
 
-      const preparedStreamPayload = this.prepareStreamingPayload(messageText);
+      const headeredText = addContextHeader(messageText);
+      const preparedStreamPayload = this.prepareStreamingPayload(headeredText);
       if (!preparedStreamPayload) {
         return;
       }
@@ -442,7 +462,7 @@ class EventSubscriptionService implements BotEventSubscriptionService {
         this.toolCallStreamer.replaceByPrefix(
           sessionId,
           SUBAGENT_STREAM_PREFIX,
-          renderedCards,
+          addContextHeader(renderedCards),
           "subagent",
         );
       } catch (err) {
@@ -469,7 +489,7 @@ class EventSubscriptionService implements BotEventSubscriptionService {
         await this.toolCallStreamer.breakSession(fileInfo.sessionId, "tool_file_boundary");
 
         const toolMessage = formatToolInfo(fileInfo);
-        const caption = this.prepareDocumentCaption(toolMessage || fileInfo.fileData.caption);
+        const caption = this.prepareDocumentCaption(addContextHeader(toolMessage || fileInfo.fileData.caption));
 
         this.toolMessageBatcher.enqueueFile(fileInfo.sessionId, {
           ...fileInfo.fileData,
@@ -818,6 +838,20 @@ class EventSubscriptionService implements BotEventSubscriptionService {
       }
 
       summaryAggregator.processEvent(event);
+
+      // Secondary routing for active reply-to targets (Path B)
+      if (eventSessionId) {
+        const replyTarget = replyDeliveryRegistry.lookup(eventSessionId);
+        if (replyTarget) {
+          const currentSession = getCurrentSession();
+          if (!currentSession || currentSession.id !== eventSessionId) {
+            safeBackgroundTask({
+              taskName: "reply-target.deliverEvent",
+              task: () => this.deliverToReplyTarget(replyTarget, event as EventStreamItem),
+            });
+          }
+        }
+      }
     }).catch((err) => {
       logger.error("Failed to subscribe to events:", err);
     });
@@ -927,6 +961,110 @@ class EventSubscriptionService implements BotEventSubscriptionService {
         });
       },
     });
+  }
+
+  private async deliverToReplyTarget(
+    target: ReplyTargetInfo,
+    event: EventStreamItem,
+  ): Promise<void> {
+    if (!this.botInstance) return;
+
+    switch (event.type) {
+      case "message.part.updated": {
+        const part = (event.properties as {
+          part?: { sessionID?: string; messageID?: string; type?: string; text?: string };
+        }).part;
+        if (
+          part?.type === "text" &&
+          part.sessionID &&
+          part.messageID &&
+          typeof part.text === "string"
+        ) {
+          this.accumulateReplyTargetText(part.sessionID, part.messageID, part.text);
+        }
+        break;
+      }
+
+      case "message.part.delta": {
+        const deltaProps = event.properties as {
+          delta?: string;
+          sessionID?: string;
+          messageID?: string;
+          part?: { sessionID?: string; messageID?: string };
+        };
+        const deltaSessionId = deltaProps.sessionID || deltaProps.part?.sessionID;
+        const deltaMessageId = deltaProps.messageID || deltaProps.part?.messageID;
+        if (deltaSessionId && deltaMessageId && typeof deltaProps.delta === "string") {
+          this.accumulateReplyTargetText(deltaSessionId, deltaMessageId, deltaProps.delta);
+        }
+        break;
+      }
+
+      case "message.updated": {
+        const info = (event.properties as { info?: { role?: string; time?: { completed?: number }; id?: string; sessionID?: string } }).info;
+        if (info?.role === "assistant" && info.time?.completed && info.sessionID && info.id) {
+          const accumulatedText = this.getAndClearReplyTargetText(info.sessionID, info.id);
+          if (accumulatedText?.trim()) {
+            const header = formatContextHeader(
+              {
+                id: target.targetSessionId,
+                title: target.targetSessionId,
+                directory: target.targetDirectory || target.projectWorktree,
+              },
+              {
+                id: target.projectWorktree,
+                worktree: target.projectWorktree,
+                name: target.projectName ?? target.projectWorktree,
+              },
+            );
+            const messageWithHeader = header + accumulatedText.trim();
+            await this.botInstance.api.sendMessage(target.chatId, messageWithHeader);
+          }
+        }
+        break;
+      }
+
+      case "session.idle": {
+        replyDeliveryRegistry.cleanup(target.stableSessionId, "session_idle");
+        this.replyTargetTexts.delete(target.targetSessionId);
+        break;
+      }
+
+      case "session.error": {
+        replyDeliveryRegistry.cleanup(target.stableSessionId, "session_error");
+        this.replyTargetTexts.delete(target.targetSessionId);
+        break;
+      }
+
+      default:
+        break;
+    }
+  }
+
+  private accumulateReplyTargetText(sessionId: string, messageId: string, text: string): void {
+    let sessionTexts = this.replyTargetTexts.get(sessionId);
+    if (!sessionTexts) {
+      sessionTexts = new Map();
+      this.replyTargetTexts.set(sessionId, sessionTexts);
+    }
+    const current = sessionTexts.get(messageId) || "";
+    sessionTexts.set(messageId, current + text);
+  }
+
+  private getAndClearReplyTargetText(sessionId: string, messageId: string): string | null {
+    const sessionTexts = this.replyTargetTexts.get(sessionId);
+    if (!sessionTexts) {
+      return null;
+    }
+
+    const text = sessionTexts.get(messageId) || null;
+    sessionTexts.delete(messageId);
+
+    if (sessionTexts.size === 0) {
+      this.replyTargetTexts.delete(sessionId);
+    }
+
+    return text;
   }
 
   private getCurrentReplyKeyboard = () => {
