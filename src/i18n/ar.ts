@@ -56,6 +56,7 @@ export const ar: I18nDictionary = {
 
   "start.welcome": "👋 أهلًا بك في OpenCode Telegram Bot!\n\nالأوامر الأساسية:\n/projects — اختيار مشروع\n/sessions — عرض الجلسات\n/new — بدء جلسة جديدة\n/commands — الأوامر المخصصة\n/skills — قائمة المهارات\n/task — إنشاء مهمة مجدولة\n/tasklist — عرض المهام المجدولة\n/status — حالة الخادم والجلسة\n/help — المساعدة\n\nاستخدم الأزرار السفلية للتبديل بين الوكيل والنموذج وخيارات التشغيل.",
   "help.keyboard_hint": "💡 استخدم الأزرار السفلية للتبديل بين الوكيل والنموذج وخيارات التشغيل وإدارة السياق.",
+  "help.reply_routing_hint": "💡 You can reply to a session's message to send a prompt directly to that session — even when it's not the current session.",
   "help.text": "📖 **المساعدة**\n\n/status - عرض حالة الخادم والجلسة\n/sessions - عرض الجلسات\n/new - بدء جلسة جديدة\n/help - المساعدة",
 
   "bot.thinking": "💭 جارٍ التفكير...",
@@ -64,6 +65,8 @@ export const ar: I18nDictionary = {
   "bot.create_session_error": "🔴 تعذر بدء جلسة جديدة. جرّب /new أو افحص حالة الخادم باستخدام /status.",
   "bot.session_created": "✅ تم إنشاء الجلسة: {title}",
   "bot.session_busy": "⏳ الوكيل مشغول بتنفيذ مهمة الآن. انتظر حتى ينتهي، أو استخدم /abort لإيقاف المهمة الحالية.",
+  "bot.reply_target_invalid": "⚠️ Could not recognize the target session from your reply. Reply to a bot message that shows the session context header.",
+  "bot.reply_target_missing_header": "⚠️ The message you replied to doesn't contain a session header. Reply to a bot message that shows project and session info.",
   "bot.session_reset_project_mismatch": "⚠️ الجلسة النشطة مرتبطة بمشروع مختلف، لذلك تمت إعادة ضبطها. استخدم /sessions لاختيار جلسة أو /new لبدء جلسة جديدة.",
   "bot.prompt_send_error": "تعذر إرسال الطلب إلى OpenCode.",
   "bot.session_error": "🔴 أعاد OpenCode الخطأ التالي: {message}",

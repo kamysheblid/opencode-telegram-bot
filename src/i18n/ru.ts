@@ -57,6 +57,8 @@ export const ru: I18nDictionary = {
     "👋 Добро пожаловать в OpenCode Telegram Bot!\n\nИспользуйте команды:\n/projects — выбрать проект\n/sessions — список сессий\n/new — новая сессия\n/commands — пользовательские команды\n/skills — каталог скиллов\n/task — задача по расписанию\n/tasklist — список задач по расписанию\n/status — статус\n/help — справка\n\nАгент, модель и вариант выбираются кнопками внизу.",
   "help.keyboard_hint":
     "💡 Агент, модель, вариант и действия с контекстом доступны через нижние кнопки клавиатуры.",
+  "help.reply_routing_hint":
+    "💡 You can reply to a session's message to send a prompt directly to that session — even when it's not the current session.",
   "help.text":
     "📖 **Справка**\n\n/status - Проверить статус сервера\n/sessions - Список сессий\n/new - Создать новую сессию\n/help - Справка",
 
@@ -68,6 +70,10 @@ export const ru: I18nDictionary = {
   "bot.session_created": "✅ Сессия создана: {title}",
   "bot.session_busy":
     "⏳ Агент уже выполняет задачу. Дождитесь завершения или используйте /abort, чтобы прервать текущий запуск.",
+  "bot.reply_target_invalid":
+    "⚠️ Could not recognize the target session from your reply. Reply to a bot message that shows the session context header.",
+  "bot.reply_target_missing_header":
+    "⚠️ The message you replied to doesn't contain a session header. Reply to a bot message that shows project and session info.",
   "bot.session_reset_project_mismatch":
     "⚠️ Активная сессия не соответствует выбранному проекту, поэтому была сброшена. Используйте /sessions для выбора или /new для создания новой сессии.",
   "bot.prompt_send_error": "Не удалось отправить запрос в OpenCode.",

@@ -18,6 +18,17 @@ const mocked = vi.hoisted(() => ({
   setSessionSummaryMock: vi.fn(),
   setBotAndChatIdMock: vi.fn(),
   attachToSessionMock: vi.fn(),
+  setCurrentSession: vi.fn(),
+  replyDeliveryRegistry: {
+    register: vi.fn(),
+    unregister: vi.fn(),
+    lookup: vi.fn(),
+    cleanup: vi.fn(),
+    clearAll: vi.fn(),
+    getAll: vi.fn(() => []),
+    getCount: vi.fn(() => 0),
+  },
+  parseContextHeaderMock: vi.fn(() => null),
 }));
 
 vi.mock("../../../src/opencode/client.js", () => ({
@@ -33,7 +44,7 @@ vi.mock("../../../src/opencode/client.js", () => ({
 
 vi.mock("../../../src/app/services/session-service.js", () => ({
   getCurrentSession: vi.fn(() => mocked.currentSession),
-  setCurrentSession: vi.fn(),
+  setCurrentSession: mocked.setCurrentSession,
   clearSession: vi.fn(),
 }));
 
@@ -134,6 +145,16 @@ vi.mock("../../../src/app/managers/external-input-suppression-manager.js", () =>
   },
 }));
 
+vi.mock("../../../src/app/managers/reply-delivery-registry.js", () => ({
+  replyDeliveryRegistry: mocked.replyDeliveryRegistry,
+}));
+
+vi.mock("../../../src/bot/messages/session-context-header.js", () => ({
+  parseContextHeader: mocked.parseContextHeaderMock,
+}));
+
+vi.mock("../../../src/bot/messages/reply-target-resolver.js", () => ({}));
+
 function createContext(): Context {
   return {
     chat: { id: 777 },
@@ -178,6 +199,10 @@ describe("bot/handlers/prompt", () => {
     mocked.safeBackgroundTaskMock.mockReset();
     mocked.setSessionSummaryMock.mockReset();
     mocked.setBotAndChatIdMock.mockReset();
+    mocked.setCurrentSession.mockReset();
+    mocked.replyDeliveryRegistry.register.mockReset();
+    mocked.parseContextHeaderMock.mockReset();
+    mocked.parseContextHeaderMock.mockReturnValue(null);
     mocked.attachToSessionMock.mockReset();
     mocked.attachToSessionMock.mockResolvedValue({
       busy: false,
@@ -315,5 +340,96 @@ describe("bot/handlers/prompt", () => {
         ],
       }),
     );
+  });
+
+  describe("reply target routing", () => {
+    const replyTarget = {
+      stableSessionId: "ses_abc",
+      targetSessionId: "ses_abc",
+      directory: "/projects/test",
+      projectWorktree: "/projects/test",
+      projectName: "Test",
+      chatId: 777,
+    };
+
+    it("does not call setCurrentSession", async () => {
+      const handled = await processUserPrompt(createContext(), "prompt", createDeps(), [], {}, replyTarget);
+
+      expect(handled).toBe(true);
+      expect(mocked.setCurrentSession).not.toHaveBeenCalled();
+    });
+
+    it("registers in reply delivery registry", async () => {
+      await processUserPrompt(createContext(), "prompt", createDeps(), [], {}, replyTarget);
+
+      expect(mocked.replyDeliveryRegistry.register).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stableSessionId: "ses_abc",
+          targetSessionId: "ses_abc",
+          targetDirectory: "/projects/test",
+          projectWorktree: "/projects/test",
+          projectName: "Test",
+          chatId: 777,
+          deliveryMode: "stream",
+        }),
+      );
+    });
+
+    it("uses target session ID and directory for promptAsync", async () => {
+      await processUserPrompt(createContext(), "prompt", createDeps(), [], {}, replyTarget);
+
+      const backgroundTask = getScheduledBackgroundTask();
+      await backgroundTask.task();
+
+      expect(mocked.sessionPromptAsyncMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sessionID: "ses_abc",
+          directory: "/projects/test",
+        }),
+      );
+    });
+
+    it("skips attachToSession", async () => {
+      await processUserPrompt(createContext(), "prompt", createDeps(), [], {}, replyTarget);
+
+      expect(mocked.attachToSessionMock).not.toHaveBeenCalled();
+    });
+
+    it("rejects busy target sessions", async () => {
+      mocked.sessionStatusMock.mockResolvedValue({
+        data: { "ses_abc": { type: "busy" } },
+        error: null,
+      });
+
+      const ctx = createContext();
+      const handled = await processUserPrompt(ctx, "prompt", createDeps(), [], {}, replyTarget);
+
+      expect(handled).toBe(false);
+      expect(ctx.reply).toHaveBeenCalled();
+      expect(mocked.replyDeliveryRegistry.register).not.toHaveBeenCalled();
+    });
+
+    it("preserves existing behavior when no reply target is provided", async () => {
+      mocked.currentSession = {
+        id: "session-1",
+        title: "Session",
+        directory: "D:\\Projects\\Repo",
+      };
+
+      const handled = await processUserPrompt(createContext(), "Review README", createDeps());
+
+      expect(handled).toBe(true);
+      expect(mocked.setCurrentSession).not.toHaveBeenCalled();
+      expect(mocked.attachToSessionMock).toHaveBeenCalledWith({
+        bot: expect.any(Object),
+        chatId: 777,
+        session: {
+          id: "session-1",
+          title: "Session",
+          directory: "D:\\Projects\\Repo",
+        },
+        ensureEventSubscription: expect.any(Function),
+      });
+    });
   });
 });

@@ -22,6 +22,7 @@ import { handleDocumentMessage } from "../handlers/document-handler.js";
 import { createMediaGroupAttachmentMiddleware } from "../handlers/media-group-handler.js";
 import { handlePhotoMessage } from "../handlers/photo-handler.js";
 import { processUserPrompt } from "../handlers/prompt.js";
+import { resolveReplyTarget } from "../messages/reply-target-resolver.js";
 import { handleCatalogTextArguments } from "../handlers/text-message-handler.js";
 import { handleVoiceMessage } from "../handlers/voice-handler.js";
 import { unknownCommandMiddleware } from "../middleware/unknown-command.js";
@@ -190,7 +191,12 @@ export function registerMessageRouter(bot: Bot<Context>, deps: MessageRouterDeps
       return;
     }
 
-    await processUserPrompt(ctx, text, promptDeps);
+    const replyTarget = resolveReplyTarget(ctx);
+    if (replyTarget) {
+      await processUserPrompt(ctx, text, promptDeps, [], {}, replyTarget);
+    } else {
+      await processUserPrompt(ctx, text, promptDeps);
+    }
 
     logger.debug("[Bot] message:text handler completed (prompt sent in background)");
   });

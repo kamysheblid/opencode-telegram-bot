@@ -60,6 +60,8 @@ export const fr: I18nDictionary = {
     "👋 Bienvenue dans OpenCode Telegram Bot !\n\nUtilisez les commandes :\n/projects — sélectionner un projet\n/sessions — liste des sessions\n/new — nouvelle session\n/commands — commandes personnalisées\n/skills — catalogue de skills\n/task — tâche planifiée\n/tasklist — tâches planifiées\n/status — statut\n/help — aide\n\nUtilisez les boutons du bas pour choisir l'agent, le modèle et la variante.",
   "help.keyboard_hint":
     "💡 Utilisez les boutons du bas pour l'agent, le modèle, la variante et les actions de contexte.",
+  "help.reply_routing_hint":
+    "💡 You can reply to a session's message to send a prompt directly to that session — even when it's not the current session.",
   "help.text":
     "📖 **Aide**\n\n/status - Vérifier l'état du serveur\n/sessions - Liste des sessions\n/new - Créer une nouvelle session\n/help - Aide",
 
@@ -72,6 +74,10 @@ export const fr: I18nDictionary = {
   "bot.session_created": "✅ Session créée : {title}",
   "bot.session_busy":
     "⏳ L'agent exécute déjà une tâche. Attendez la fin ou utilisez /abort pour interrompre l'exécution en cours.",
+  "bot.reply_target_invalid":
+    "⚠️ Could not recognize the target session from your reply. Reply to a bot message that shows the session context header.",
+  "bot.reply_target_missing_header":
+    "⚠️ The message you replied to doesn't contain a session header. Reply to a bot message that shows project and session info.",
   "bot.session_reset_project_mismatch":
     "⚠️ La session active ne correspond pas au projet sélectionné, elle a donc été réinitialisée. Utilisez /sessions pour en choisir une ou /new pour créer une nouvelle session.",
   "bot.prompt_send_error": "Impossible d'envoyer la requête à OpenCode.",
