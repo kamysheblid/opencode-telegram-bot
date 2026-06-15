@@ -394,22 +394,38 @@ export async function getFavoriteModels(): Promise<FavoriteModel[]> {
   return favorites;
 }
 
+function getSearchRank(model: FavoriteModel, normalizedQuery: string): number {
+  const key = getModelKey(model.providerID, model.modelID).toLowerCase();
+
+  if (key === normalizedQuery) return 0;
+  if (model.providerID.toLowerCase() === normalizedQuery) return 1;
+
+  return 2;
+}
+
 /**
  * Search models across the full provider catalog.
  * Matches case-insensitive substring against "providerID/modelID".
- * Returns at most SEARCH_RESULTS_LIMIT results sorted alphabetically.
+ * Results are ranked: exact matches first, then provider-prefix matches,
+ * then generic substring matches. Within each rank, results are alphabetical.
+ * Returns at most SEARCH_RESULTS_LIMIT results.
  * @param query Search query string
+ * @param options Optional behavior flags
+ * @param options.forceRefresh If true, bypasses the model catalog cache
  * @returns Matching models, empty array if catalog unavailable or no matches
  */
-export async function searchModels(query: string): Promise<FavoriteModel[]> {
+export async function searchModels(
+  query: string,
+  options?: { forceRefresh?: boolean },
+): Promise<FavoriteModel[]> {
   const normalizedQuery = query.trim().toLowerCase();
 
   if (!normalizedQuery) {
     return [];
   }
 
-  // Ensure catalog is loaded (uses cache if fresh)
-  const validKeys = await getValidModelKeys();
+  // Ensure catalog is loaded (uses cache if fresh, unless forceRefresh)
+  const validKeys = await getValidModelKeys(options?.forceRefresh ? { force: true } : undefined);
 
   if (!validKeys || !cachedAllModels) {
     logger.warn("[ModelManager] Model catalog unavailable, skipping search");
@@ -422,6 +438,9 @@ export async function searchModels(query: string): Promise<FavoriteModel[]> {
       return key.includes(normalizedQuery);
     })
     .sort((a, b) => {
+      const rankA = getSearchRank(a, normalizedQuery);
+      const rankB = getSearchRank(b, normalizedQuery);
+      if (rankA !== rankB) return rankA - rankB;
       const keyA = getModelKey(a.providerID, a.modelID).toLowerCase();
       const keyB = getModelKey(b.providerID, b.modelID).toLowerCase();
       return keyA.localeCompare(keyB);
