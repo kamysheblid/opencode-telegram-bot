@@ -7,6 +7,9 @@ import { handleTaskTextInput } from "../commands/task-command.js";
 import {
   handleModelSearchTextInput,
 } from "../callbacks/model-selection-callback-handler.js";
+import {
+  handleModelsCommandSearchTextInput,
+} from "../callbacks/models-command-callback-handler.js";
 import { handleQuestionTextAnswer } from "../callbacks/question-callback-handler.js";
 import { handleRenameTextAnswer } from "../callbacks/rename-callback-handler.js";
 import { handleContextButtonPress } from "../menus/context-control-menu.js";
@@ -177,6 +180,11 @@ export function registerMessageRouter(bot: Bot<Context>, deps: MessageRouterDeps
 
     const handledModelSearchText = await handleModelSearchTextInput(ctx);
     if (handledModelSearchText) {
+      return;
+    }
+
+    const handledModelsCommandSearch = await handleModelsCommandSearchTextInput(ctx);
+    if (handledModelsCommandSearch) {
       return;
     }
 

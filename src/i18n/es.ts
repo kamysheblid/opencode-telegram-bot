@@ -321,6 +321,12 @@ export const es: I18nDictionary = {
   "models.unknown_mode": "Unknown listing mode.",
   "models.empty": "📭 No models available.",
   "models.fetch_error": "🔴 Failed to load models.",
+  "models.search.button": "🔍 Buscar",
+  "models.search.clear_filter": "✕ Limpiar filtro",
+  "models.search.error": "🔴 Búsqueda fallida",
+  "models.search.no_results": "No se encontraron modelos para \"{query}\"",
+  "models.search.prompt": "🔍 Ingresa nombre del modelo o proveedor para filtrar:",
+  "models.search.results_header": "Resultados de búsqueda para \"{query}\":",
 
   "variant.model_not_selected_callback": "Error: no hay un modelo seleccionado",
   "variant.changed_callback": "Variante cambiada: {name}",

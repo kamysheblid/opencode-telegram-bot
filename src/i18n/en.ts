@@ -307,6 +307,12 @@ export const en = {
   "models.unknown_mode": "Unknown listing mode.",
   "models.empty": "📭 No models available.",
   "models.fetch_error": "🔴 Failed to load models.",
+  "models.search.button": "🔍 Search",
+  "models.search.clear_filter": "✕ Clear filter",
+  "models.search.error": "🔴 Search failed",
+  "models.search.no_results": "No models found matching \"{query}\"",
+  "models.search.prompt": "🔍 Enter model name or provider to filter:",
+  "models.search.results_header": "Search results for \"{query}\":",
 
   "variant.model_not_selected_callback": "Error: model is not selected",
   "variant.changed_callback": "Variant changed: {name}",

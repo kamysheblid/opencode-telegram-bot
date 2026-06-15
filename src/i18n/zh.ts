@@ -271,6 +271,12 @@ export const zh: I18nDictionary = {
   "models.unknown_mode": "Unknown listing mode.",
   "models.empty": "📭 No models available.",
   "models.fetch_error": "🔴 Failed to load models.",
+  "models.search.button": "🔍 搜索",
+  "models.search.clear_filter": "✕ 清除筛选",
+  "models.search.error": "🔴 搜索失败",
+  "models.search.no_results": "未找到匹配 \"{query}\" 的模型",
+  "models.search.prompt": "🔍 输入模型名称或提供商进行筛选：",
+  "models.search.results_header": "搜索 \"{query}\" 的结果：",
 
   "variant.model_not_selected_callback": "错误：未选择模型",
   "variant.changed_callback": "变体已更改：{name}",

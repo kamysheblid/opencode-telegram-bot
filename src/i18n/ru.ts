@@ -310,6 +310,12 @@ export const ru: I18nDictionary = {
   "models.unknown_mode": "Unknown listing mode.",
   "models.empty": "📭 No models available.",
   "models.fetch_error": "🔴 Failed to load models.",
+  "models.search.button": "🔍 Поиск",
+  "models.search.clear_filter": "✕ Сбросить фильтр",
+  "models.search.error": "🔴 Поиск не удался",
+  "models.search.no_results": "Модели не найдены по запросу \"{query}\"",
+  "models.search.prompt": "🔍 Введите название модели или провайдера для фильтрации:",
+  "models.search.results_header": "Результаты поиска по запросу \"{query}\":",
 
   "variant.model_not_selected_callback": "Ошибка: модель не выбрана",
   "variant.changed_callback": "Вариант изменен: {name}",

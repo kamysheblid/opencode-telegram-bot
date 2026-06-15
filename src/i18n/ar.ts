@@ -273,6 +273,12 @@ export const ar: I18nDictionary = {
   "models.unknown_mode": "Unknown listing mode.",
   "models.empty": "📭 No models available.",
   "models.fetch_error": "🔴 Failed to load models.",
+  "models.search.button": "🔍 بحث",
+  "models.search.clear_filter": "✕ مسح الفلتر",
+  "models.search.error": "🔴 فشل البحث",
+  "models.search.no_results": "لم يتم العثور على نماذج تطابق \"{query}\"",
+  "models.search.prompt": "🔍 أدخل اسم النموذج أو المزوّد للتصفية:",
+  "models.search.results_header": "نتائج البحث عن \"{query}\":",
 
   "variant.model_not_selected_callback": "خطأ: لم يتم تحديد النموذج",
   "variant.changed_callback": "تم تغيير الخيار إلى: {name}",
