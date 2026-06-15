@@ -31,6 +31,7 @@ import {
   paginateItems,
   fetchAllConfiguredItems,
   fetchFavoritesRecentItems,
+  clearModelListingCache,
 } from "../../../src/app/services/model-listing-service.js";
 
 // ---------------------------------------------------------------------------
@@ -62,6 +63,7 @@ function makeItems(count: number, prefix = "m"): Array<{ providerID: string; mod
 
 describe("app/services/model-listing-service", () => {
   beforeEach(() => {
+    clearModelListingCache();
     providersMock.mockReset();
     getModelSelectionListsMock.mockReset();
     loggerErrorMock.mockReset();
@@ -240,6 +242,62 @@ describe("app/services/model-listing-service", () => {
       const items = await fetchAllConfiguredItems();
       expect(items).toHaveLength(0);
       expect(loggerErrorMock).toHaveBeenCalled();
+    });
+
+    it("reuses successful provider catalog results for page navigation", async () => {
+      providersMock
+        .mockResolvedValueOnce(
+          createProvidersResponse({
+            openai: ["gpt-4o"],
+          }),
+        )
+        .mockResolvedValueOnce(
+          createProvidersResponse({
+            anthropic: ["claude-sonnet"],
+          }),
+        );
+
+      const firstItems = await fetchAllConfiguredItems();
+      const secondItems = await fetchAllConfiguredItems();
+
+      expect(firstItems).toEqual([{ providerID: "openai", modelID: "gpt-4o", name: undefined }]);
+      expect(secondItems).toEqual(firstItems);
+      expect(providersMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not cache empty provider catalog results", async () => {
+      providersMock
+        .mockResolvedValueOnce({ data: { providers: [] }, error: null })
+        .mockResolvedValueOnce(
+          createProvidersResponse({
+            openai: ["gpt-4o"],
+          }),
+        );
+
+      const firstItems = await fetchAllConfiguredItems();
+      const secondItems = await fetchAllConfiguredItems();
+
+      expect(firstItems).toHaveLength(0);
+      expect(secondItems).toEqual([{ providerID: "openai", modelID: "gpt-4o", name: undefined }]);
+      expect(providersMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not cache provider catalog exceptions", async () => {
+      providersMock
+        .mockRejectedValueOnce(new Error("connection refused"))
+        .mockResolvedValueOnce(
+          createProvidersResponse({
+            openai: ["gpt-4o"],
+          }),
+        );
+
+      const firstItems = await fetchAllConfiguredItems();
+      const secondItems = await fetchAllConfiguredItems();
+
+      expect(firstItems).toHaveLength(0);
+      expect(secondItems).toEqual([{ providerID: "openai", modelID: "gpt-4o", name: undefined }]);
+      expect(providersMock).toHaveBeenCalledTimes(2);
+      expect(loggerErrorMock).toHaveBeenCalledTimes(1);
     });
   });
 

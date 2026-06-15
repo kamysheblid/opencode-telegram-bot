@@ -4,6 +4,44 @@ import { logger } from "../../utils/logger.js";
 import type { ModelListItem, ModelListingMode, ModelListingPage } from "../types/model-listing.js";
 import { DEFAULT_LISTING_PAGE_SIZE } from "../types/model-listing.js";
 
+const LISTING_CACHE_TTL_MS = 60_000;
+
+interface ListingCacheEntry {
+  expiresAt: number;
+  items: ModelListItem[];
+}
+
+const listingCache = new Map<ModelListingMode, ListingCacheEntry>();
+
+function getCachedItems(mode: ModelListingMode): ModelListItem[] | null {
+  const entry = listingCache.get(mode);
+  if (!entry) {
+    return null;
+  }
+
+  if (Date.now() > entry.expiresAt) {
+    listingCache.delete(mode);
+    return null;
+  }
+
+  return [...entry.items];
+}
+
+function setCachedItems(mode: ModelListingMode, items: ModelListItem[]): void {
+  if (items.length === 0) {
+    return;
+  }
+
+  listingCache.set(mode, {
+    expiresAt: Date.now() + LISTING_CACHE_TTL_MS,
+    items: [...items],
+  });
+}
+
+export function clearModelListingCache(): void {
+  listingCache.clear();
+}
+
 // ---------------------------------------------------------------------------
 // Supported modes
 // ---------------------------------------------------------------------------
@@ -130,9 +168,16 @@ export function buildFavoritesRecentItems(
  * Returns an empty array on failure.
  */
 export async function fetchAllConfiguredItems(): Promise<ModelListItem[]> {
+  const cachedItems = getCachedItems("all");
+  if (cachedItems !== null) {
+    return cachedItems;
+  }
+
   try {
     const response = await opencodeClient.config.providers();
-    return buildAllConfiguredItems(response);
+    const items = buildAllConfiguredItems(response);
+    setCachedItems("all", items);
+    return items;
   } catch (err) {
     logger.error("[ModelListingService] Failed to fetch provider catalog:", err);
     return [];
@@ -144,9 +189,16 @@ export async function fetchAllConfiguredItems(): Promise<ModelListItem[]> {
  * Returns an empty array on failure.
  */
 export async function fetchFavoritesRecentItems(): Promise<ModelListItem[]> {
+  const cachedItems = getCachedItems("favoritesRecent");
+  if (cachedItems !== null) {
+    return cachedItems;
+  }
+
   try {
     const lists = await getModelSelectionLists();
-    return buildFavoritesRecentItems(lists.favorites, lists.recent);
+    const items = buildFavoritesRecentItems(lists.favorites, lists.recent);
+    setCachedItems("favoritesRecent", items);
+    return items;
   } catch (err) {
     logger.error("[ModelListingService] Failed to fetch favorites/recent items:", err);
     return [];
