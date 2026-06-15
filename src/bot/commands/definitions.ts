@@ -40,6 +40,7 @@ const COMMAND_DEFINITIONS: BotCommandI18nDefinition[] = [
   { command: "opencode_stop", descriptionKey: "cmd.description.opencode_stop" },
   { command: "open", descriptionKey: "cmd.description.open" },
   { command: "ls", descriptionKey: "cmd.description.ls" },
+  { command: "models", descriptionKey: "cmd.description.models" },
   { command: "help", descriptionKey: "cmd.description.help" },
 ];
 
