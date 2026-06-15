@@ -1,6 +1,8 @@
 import { Context, InlineKeyboard } from "grammy";
 import { getStoredAgent, resolveProjectAgent } from "../../app/services/agent-selection-service.js";
 import {
+  fetchCurrentModel,
+  getModelSelectionLists,
   searchModels,
   selectModel,
 } from "../../app/services/model-selection-service.js";
@@ -13,11 +15,22 @@ import { t } from "../../i18n/index.js";
 import { createMainKeyboard } from "../keyboards/main-reply-keyboard.js";
 import { keyboardManager } from "../keyboards/keyboard-manager.js";
 import { pinnedMessageManager } from "../pinned/pinned-message-manager.js";
-import { clearActiveInlineMenu, ensureActiveInlineMenu } from "../menus/inline-menu.js";
+import {
+  clearActiveInlineMenu,
+  ensureActiveInlineMenu,
+  appendInlineMenuCancelButton,
+} from "../menus/inline-menu.js";
 import {
   MODEL_SEARCH_AGAIN_CALLBACK,
   MODEL_SEARCH_CALLBACK,
   MODEL_SEARCH_CANCEL_CALLBACK,
+  MODEL_PICKER_PAGE_PREFIX,
+  MODEL_PICKER_PAGE_SIZE,
+  parseModelPickerPageCallback,
+  buildModelSelectionMenu,
+  buildModelSelectionMenuText,
+  getAllModelsFromLists,
+  calculateModelPickerRange,
 } from "../menus/model-selection-menu.js";
 
 interface ModelSearchMetadata {
@@ -117,6 +130,34 @@ export async function handleModelSelect(ctx: Context): Promise<boolean> {
   }
 
   logger.debug(`[ModelHandler] Received callback: ${callbackQuery.data}`);
+
+  if (callbackQuery.data.startsWith(MODEL_PICKER_PAGE_PREFIX)) {
+    const page = parseModelPickerPageCallback(callbackQuery.data);
+    if (page === null) {
+      await ctx.answerCallbackQuery({ text: t("model.change_error_callback") }).catch(() => {});
+      return true;
+    }
+
+    try {
+      const currentModel = fetchCurrentModel();
+      const modelLists = await getModelSelectionLists();
+      const combinedModels = getAllModelsFromLists(modelLists);
+      const range = calculateModelPickerRange(combinedModels.length, page, MODEL_PICKER_PAGE_SIZE);
+      const keyboard = await buildModelSelectionMenu(currentModel, modelLists, range.page);
+
+      appendInlineMenuCancelButton(keyboard, "model");
+
+      const text = buildModelSelectionMenuText(modelLists, range.page, range.totalPages);
+
+      await ctx.editMessageText(text, { reply_markup: keyboard });
+      await ctx.answerCallbackQuery().catch(() => {});
+      return true;
+    } catch (err) {
+      logger.error("[ModelHandler] Error handling picker page navigation:", err);
+      await ctx.answerCallbackQuery({ text: t("model.change_error_callback") }).catch(() => {});
+      return true;
+    }
+  }
 
   try {
     // Parse callback data: "model:providerID:modelID"
