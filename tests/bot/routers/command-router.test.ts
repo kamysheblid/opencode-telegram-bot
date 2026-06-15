@@ -35,6 +35,7 @@ describe("bot/routers/command-router", () => {
       "commands",
       "skills",
       "mcps",
+      "models",
     ]);
   });
 
