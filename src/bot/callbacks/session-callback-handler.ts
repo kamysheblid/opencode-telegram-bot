@@ -7,8 +7,6 @@ import { getCurrentProject } from "../../app/stores/settings-store.js";
 import { clearAllInteractionState, interactionManager } from "../../app/managers/interaction-manager.js";
 import { keyboardManager } from "../keyboards/keyboard-manager.js";
 import { appendInlineMenuCancelButton, ensureActiveInlineMenu } from "../menus/inline-menu.js";
-import { isForegroundBusy } from "../../app/services/run-control-service.js";
-import { replyBusyBlocked } from "../messages/busy-blocked-renderer.js";
 import { logger } from "../../utils/logger.js";
 import { safeBackgroundTask } from "../../utils/safe-background-task.js";
 import { config } from "../../config.js";
@@ -213,11 +211,6 @@ export async function handleBackgroundSessionOpen(
     return false;
   }
 
-  if (isForegroundBusy()) {
-    await replyBusyBlocked(ctx);
-    return true;
-  }
-
   if (shouldBlockBackgroundSessionOpen()) {
     await ctx.answerCallbackQuery({ text: t("interaction.blocked.finish_current") }).catch(() => {});
     return true;
@@ -244,11 +237,6 @@ export async function handleSessionSelect(ctx: Context, deps: SessionSelectDeps)
   const callbackQuery = ctx.callbackQuery;
   if (!callbackQuery?.data || !callbackQuery.data.startsWith(SESSION_CALLBACK_PREFIX)) {
     return false;
-  }
-
-  if (isForegroundBusy()) {
-    await replyBusyBlocked(ctx);
-    return true;
   }
 
   const page = parseSessionPageCallback(callbackQuery.data);

@@ -282,14 +282,14 @@ describe("bot/commands/sessions", () => {
     expect(keyboardRows[11]?.[0]?.callback_data).toBe("inline:cancel:session");
   });
 
-  it("blocks sessions command while foreground session is busy", async () => {
+  it("allows sessions command while foreground session is busy", async () => {
     foregroundSessionState.markBusy("session-1", "D:\\Projects\\Repo");
 
     const ctx = createCommandContext();
     await sessionsCommand(ctx as never);
 
-    expect(mocked.sessionListMock).not.toHaveBeenCalled();
-    expect(ctx.reply).toHaveBeenCalledWith(t("bot.session_busy"));
+    expect(mocked.sessionListMock).toHaveBeenCalled();
+    expect(ctx.reply).not.toHaveBeenCalledWith(t("bot.session_busy"));
   });
 
   it("renders session fallback text with the inline menu request", async () => {
@@ -463,8 +463,12 @@ describe("bot/commands/sessions", () => {
     );
   });
 
-  it("blocks session selection callback while foreground session is busy", async () => {
+  it("allows session selection callback while foreground session is busy", async () => {
     foregroundSessionState.markBusy("session-1", "D:\\Projects\\Repo");
+    mocked.sessionGetMock.mockResolvedValueOnce({
+      data: createSession(0),
+      error: null,
+    });
 
     interactionManager.start({
       kind: "inline",
@@ -479,9 +483,9 @@ describe("bot/commands/sessions", () => {
     const handled = await handleSessionSelect(ctx, createDeps());
 
     expect(handled).toBe(true);
-    expect(mocked.sessionGetMock).not.toHaveBeenCalled();
-    expect(mocked.setCurrentSessionMock).not.toHaveBeenCalled();
-    expect(ctx.answerCallbackQuery).toHaveBeenCalledWith({
+    expect(mocked.sessionGetMock).toHaveBeenCalled();
+    expect(mocked.setCurrentSessionMock).toHaveBeenCalled();
+    expect(ctx.answerCallbackQuery).not.toHaveBeenCalledWith({
       text: t("bot.session_busy"),
     });
   });
@@ -652,17 +656,21 @@ describe("bot/commands/sessions", () => {
     expect(ctx.answerCallbackQuery).toHaveBeenCalledWith();
   });
 
-  it("blocks background session open while foreground session is busy", async () => {
+  it("allows background session open while foreground session is busy", async () => {
     foregroundSessionState.markBusy("session-1", "D:\\Projects\\Repo");
+    mocked.sessionGetMock.mockResolvedValueOnce({
+      data: createSession(1),
+      error: null,
+    });
 
     const ctx = createCallbackContext("background-session:session-2", 456);
     const handled = await handleBackgroundSessionOpen(ctx, createDeps());
 
     expect(handled).toBe(true);
-    expect(mocked.sessionGetMock).not.toHaveBeenCalled();
-    expect(mocked.setCurrentSessionMock).not.toHaveBeenCalled();
-    expect(ctx.editMessageReplyMarkup).not.toHaveBeenCalled();
-    expect(ctx.answerCallbackQuery).toHaveBeenCalledWith({
+    expect(mocked.sessionGetMock).toHaveBeenCalled();
+    expect(mocked.setCurrentSessionMock).toHaveBeenCalled();
+    expect(ctx.editMessageReplyMarkup).toHaveBeenCalled();
+    expect(ctx.answerCallbackQuery).not.toHaveBeenCalledWith({
       text: t("bot.session_busy"),
     });
   });
