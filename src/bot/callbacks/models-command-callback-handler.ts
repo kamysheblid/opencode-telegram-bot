@@ -7,6 +7,8 @@ import {
   fetchFavoritesRecentItems,
   paginateItems,
 } from "../../app/services/model-listing-service.js";
+import { selectModel } from "../../app/services/model-selection-service.js";
+import { formatModelForDisplay } from "../../app/types/model.js";
 import { DEFAULT_LISTING_PAGE_SIZE } from "../../app/types/model-listing.js";
 import { t } from "../../i18n/index.js";
 import { logger } from "../../utils/logger.js";
@@ -28,7 +30,7 @@ function buildModelsListKeyboard(
   const keyboard = new InlineKeyboard();
 
   for (const item of items) {
-    keyboard.text(`${item.providerID}/${item.modelID}`, "models:noop").row();
+    keyboard.text(`${item.providerID}/${item.modelID}`, `${MODELS_LIST_CALLBACK_PREFIX}:select:${item.providerID}:${item.modelID}`).row();
   }
 
   if (totalPages > 1) {
@@ -88,7 +90,13 @@ export async function handleModelsCommandCallback(ctx: Context): Promise<boolean
       const page = paginateItems(items, 0, DEFAULT_LISTING_PAGE_SIZE);
 
       if (page.items.length === 0) {
-        await ctx.editMessageText(t("models.empty"), { reply_markup: undefined });
+        try {
+          await ctx.editMessageText(t("models.empty"), { reply_markup: undefined });
+        } catch (emptyErr) {
+          logger.error("[ModelsCallback] Failed to edit message for empty page (mode):", emptyErr);
+          await ctx.answerCallbackQuery({ text: t("models.fetch_error") }).catch(() => {});
+          return true;
+        }
         await ctx.answerCallbackQuery().catch(() => {});
         return true;
       }
@@ -100,7 +108,14 @@ export async function handleModelsCommandCallback(ctx: Context): Promise<boolean
 
       const keyboard = buildModelsListKeyboard(page.items, page.page, page.totalPages, mode);
 
-      await ctx.editMessageText(`${header}${pageInfo}`, { reply_markup: keyboard });
+      try {
+        await ctx.editMessageText(`${header}${pageInfo}`, { reply_markup: keyboard });
+      } catch (editErr) {
+        logger.error("[ModelsCallback] Failed to edit message for mode selection:", editErr);
+        await ctx.answerCallbackQuery({ text: t("models.fetch_error") }).catch(() => {});
+        return true;
+      }
+
       await ctx.answerCallbackQuery().catch(() => {});
       return true;
     }
@@ -131,7 +146,13 @@ export async function handleModelsCommandCallback(ctx: Context): Promise<boolean
       const page = paginateItems(items, pageNum, DEFAULT_LISTING_PAGE_SIZE);
 
       if (page.items.length === 0) {
-        await ctx.editMessageText(t("models.empty"), { reply_markup: undefined });
+        try {
+          await ctx.editMessageText(t("models.empty"), { reply_markup: undefined });
+        } catch (emptyErr) {
+          logger.error("[ModelsCallback] Failed to edit message for empty page:", emptyErr);
+          await ctx.answerCallbackQuery({ text: t("models.fetch_error") }).catch(() => {});
+          return true;
+        }
         await ctx.answerCallbackQuery().catch(() => {});
         return true;
       }
@@ -143,9 +164,34 @@ export async function handleModelsCommandCallback(ctx: Context): Promise<boolean
 
       const keyboard = buildModelsListKeyboard(page.items, page.page, page.totalPages, mode);
 
-      await ctx.editMessageText(`${header}${pageInfo}`, { reply_markup: keyboard });
+      try {
+        await ctx.editMessageText(`${header}${pageInfo}`, { reply_markup: keyboard });
+      } catch (editErr) {
+        logger.error("[ModelsCallback] Failed to edit message for page navigation:", editErr);
+        await ctx.answerCallbackQuery({ text: t("models.fetch_error") }).catch(() => {});
+        return true;
+      }
+
       await ctx.answerCallbackQuery().catch(() => {});
       return true;
+    }
+
+    if (action === "select") {
+      const providerID = parts[3];
+      const modelID = parts.slice(4).join(":");
+
+      try {
+        const displayName = formatModelForDisplay(providerID, modelID);
+        selectModel({ providerID, modelID, variant: "default" });
+
+        await ctx.answerCallbackQuery({ text: t("model.changed_callback", { name: displayName }) });
+        await ctx.editMessageText(t("model.changed_message", { name: displayName }));
+        return true;
+      } catch (err) {
+        logger.error("[ModelsCallback] Error selecting model:", err);
+        await ctx.answerCallbackQuery({ text: t("model.change_error_callback") }).catch(() => {});
+        return true;
+      }
     }
 
     return false;

@@ -120,6 +120,26 @@ describe("bot/callbacks/models-command-callback-handler", () => {
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
   });
 
+  it("handles page navigation beyond first page", async () => {
+    // Mock 15 items to span multiple pages (page size is 10 in the mock)
+    const manyItems = Array.from({ length: 15 }, (_, i) => ({
+      providerID: "openai",
+      modelID: `gpt-${i}`,
+    }));
+    mocked.fetchAllConfiguredItemsMock.mockResolvedValue(manyItems);
+
+    const ctx = createContext({
+      callbackQuery: { data: `${MODELS_LIST_CALLBACK_PREFIX}:page:all:1` },
+    });
+
+    const result = await handleModelsCommandCallback(ctx);
+
+    expect(result).toBe(true);
+    expect(mocked.fetchAllConfiguredItemsMock).toHaveBeenCalledTimes(1);
+    expect(ctx.editMessageText).toHaveBeenCalledTimes(1);
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
+
   it("handles page navigation in favoritesRecent mode", async () => {
     mocked.fetchFavoritesRecentItemsMock.mockResolvedValue([
       { providerID: "openai", modelID: "gpt-4o" },
