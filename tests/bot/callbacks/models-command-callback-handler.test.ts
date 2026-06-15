@@ -73,6 +73,43 @@ describe("bot/callbacks/models-command-callback-handler", () => {
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
   });
 
+  it("uses short index-based select callbacks under Telegram 64-byte limit", async () => {
+    mocked.fetchAllConfiguredItemsMock.mockResolvedValue([
+      { providerID: "openai", modelID: "gpt-4o" },
+      { providerID: "openai", modelID: "gpt-4-turbo" },
+    ]);
+
+    const ctx = createContext({
+      callbackQuery: { data: `${MODELS_LIST_CALLBACK_PREFIX}:mode:all` },
+    });
+
+    const result = await handleModelsCommandCallback(ctx);
+
+    expect(result).toBe(true);
+    expect(ctx.editMessageText).toHaveBeenCalledTimes(1);
+
+    const sentKeyboard = ctx.editMessageText.mock.calls.at(-1)?.[1]?.reply_markup;
+    const button = sentKeyboard?.inline_keyboard?.flat().at(0);
+    expect(button?.callback_data?.length).toBeLessThanOrEqual(64);
+    expect(button?.callback_data).toBe(`${MODELS_LIST_CALLBACK_PREFIX}:select:all:0`);
+  });
+
+  it("handles select by index and switches model", async () => {
+    mocked.fetchAllConfiguredItemsMock.mockResolvedValue([
+      { providerID: "openai", modelID: "gpt-4o" },
+      { providerID: "openai", modelID: "gpt-4-turbo" },
+    ]);
+
+    const ctx = createContext({
+      callbackQuery: { data: `${MODELS_LIST_CALLBACK_PREFIX}:select:all:1` },
+    });
+
+    const result = await handleModelsCommandCallback(ctx);
+
+    expect(result).toBe(true);
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
+
   it("handles mode:favoritesRecent and renders model list", async () => {
     mocked.fetchFavoritesRecentItemsMock.mockResolvedValue([
       { providerID: "openai", modelID: "gpt-4o" },

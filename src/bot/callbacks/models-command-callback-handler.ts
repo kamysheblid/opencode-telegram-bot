@@ -29,8 +29,11 @@ function buildModelsListKeyboard(
 ): InlineKeyboard {
   const keyboard = new InlineKeyboard();
 
-  for (const item of items) {
-    keyboard.text(`${item.providerID}/${item.modelID}`, `${MODELS_LIST_CALLBACK_PREFIX}:select:${item.providerID}:${item.modelID}`).row();
+  for (const [index, item] of items.entries()) {
+    keyboard.text(
+      `${item.providerID}/${item.modelID}`,
+      `${MODELS_LIST_CALLBACK_PREFIX}:select:${mode}:${index}`,
+    ).row();
   }
 
   if (totalPages > 1) {
@@ -191,12 +194,39 @@ export async function handleModelsCommandCallback(ctx: Context): Promise<boolean
     }
 
     if (action === "select") {
-      const providerID = parts[3];
-      const modelID = parts.slice(4).join(":");
+      const mode = parts[3];
+      const index = parseInt(parts[4], 10);
+
+      if (isNaN(index) || index < 0) {
+        await ctx.answerCallbackQuery({ text: t("model.change_error_callback") }).catch(() => {});
+        return true;
+      }
+
+      let items: Array<{ providerID: string; modelID: string }>;
+
+      switch (mode) {
+        case "all":
+          items = await fetchAllConfiguredItems();
+          break;
+        case "favoritesRecent":
+          items = await fetchFavoritesRecentItems();
+          break;
+        default:
+          await ctx.answerCallbackQuery({ text: t("models.unknown_mode") }).catch(() => {});
+          return true;
+      }
+
+      const page = paginateItems(items, 0, DEFAULT_LISTING_PAGE_SIZE);
+      const item = page.items[index];
+
+      if (!item) {
+        await ctx.answerCallbackQuery({ text: t("model.change_error_callback") }).catch(() => {});
+        return true;
+      }
 
       try {
-        const displayName = formatModelForDisplay(providerID, modelID);
-        selectModel({ providerID, modelID, variant: "default" });
+        const displayName = formatModelForDisplay(item.providerID, item.modelID);
+        selectModel({ providerID: item.providerID, modelID: item.modelID, variant: "default" });
 
         await ctx.answerCallbackQuery({ text: t("model.changed_callback", { name: displayName }) });
         await ctx.editMessageText(t("model.changed_message", { name: displayName }));
