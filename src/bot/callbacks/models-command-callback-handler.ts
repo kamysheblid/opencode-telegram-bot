@@ -106,7 +106,14 @@ export async function handleModelsCommandCallback(ctx: Context): Promise<boolean
         ? `\n\n${t("model.picker.page_indicator", { current: 1, total: page.totalPages })}`
         : "";
 
-      const keyboard = buildModelsListKeyboard(page.items, page.page, page.totalPages, mode);
+      let keyboard: InlineKeyboard;
+      try {
+        keyboard = buildModelsListKeyboard(page.items, page.page, page.totalPages, mode);
+      } catch (keyboardErr) {
+        logger.error("[ModelsCallback] Failed to build keyboard for mode selection:", keyboardErr);
+        await ctx.answerCallbackQuery({ text: t("models.fetch_error") }).catch(() => {});
+        return true;
+      }
 
       try {
         await ctx.editMessageText(`${header}${pageInfo}`, { reply_markup: keyboard });
@@ -162,7 +169,14 @@ export async function handleModelsCommandCallback(ctx: Context): Promise<boolean
         ? `\n\n${t("model.picker.page_indicator", { current: page.page + 1, total: page.totalPages })}`
         : "";
 
-      const keyboard = buildModelsListKeyboard(page.items, page.page, page.totalPages, mode);
+      let keyboard: InlineKeyboard;
+      try {
+        keyboard = buildModelsListKeyboard(page.items, page.page, page.totalPages, mode);
+      } catch (keyboardErr) {
+        logger.error("[ModelsCallback] Failed to build keyboard for page navigation:", keyboardErr);
+        await ctx.answerCallbackQuery({ text: t("models.fetch_error") }).catch(() => {});
+        return true;
+      }
 
       try {
         await ctx.editMessageText(`${header}${pageInfo}`, { reply_markup: keyboard });
