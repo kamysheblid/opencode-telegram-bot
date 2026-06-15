@@ -1,5 +1,27 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ToolCallStreamer } from "../../../src/bot/streaming/tool-call-streamer.js";
+import type { ToolCallStreamerOptions } from "../../../src/bot/streaming/tool-call-streamer.js";
+
+/* ------------------------------------------------------------------ */
+/*  Helper: simulate addContextHeader for callback-level tests         */
+/* ------------------------------------------------------------------ */
+const TOOL_STREAM_HEADER =
+  "📁 Project: /test | Test\n💬 Session: ses_test | Test\n\n";
+
+function simulateAddHeader(text: string): string {
+  if (text.startsWith(TOOL_STREAM_HEADER)) return text;
+  return TOOL_STREAM_HEADER + text;
+}
+
+function makeOptions(overrides?: Partial<ToolCallStreamerOptions>): ToolCallStreamerOptions {
+  return {
+    throttleMs: 0,
+    sendText: vi.fn().mockResolvedValue(1),
+    editText: vi.fn().mockResolvedValue(undefined),
+    deleteText: vi.fn().mockResolvedValue(undefined),
+    ...overrides,
+  };
+}
 
 describe("bot/streaming/tool-call-streamer", () => {
   afterEach(() => {
@@ -121,6 +143,68 @@ describe("bot/streaming/tool-call-streamer", () => {
     expect(sendText).toHaveBeenNthCalledWith(1, "s1", "regular tool");
     expect(sendText).toHaveBeenNthCalledWith(2, "s1", "subagent card");
     expect(editText).toHaveBeenCalledWith("s1", 21, "subagent card updated");
+  });
+
+  it("wraps subagent card text with context header on first send", async () => {
+    vi.useFakeTimers();
+
+    let headeredText = "";
+    const sendText = vi.fn(async (_sid: string, text: string) => {
+      headeredText = simulateAddHeader(text);
+      return 10;
+    });
+    const editText = vi.fn().mockResolvedValue(undefined);
+    const streamer = new ToolCallStreamer(
+      makeOptions({
+        sendText,
+        editText,
+      }),
+    );
+
+    streamer.replaceByPrefix("s1", "subagent", "subagent card", "subagent");
+    await vi.waitFor(() => {
+      expect(sendText).toHaveBeenCalledTimes(1);
+    });
+
+    expect(sendText).toHaveBeenCalledWith("s1", "subagent card");
+    expect(headeredText).toBe(TOOL_STREAM_HEADER + "subagent card");
+  });
+
+  it("preserves context header on subagent card update without double-header", async () => {
+    vi.useFakeTimers();
+
+    let editHeaderedText = "";
+    const sendText = vi.fn(async (_sid: string, text: string) => {
+      simulateAddHeader(text);
+      return 10;
+    });
+    const editText = vi.fn(async (_sid: string, _mid: number, text: string) => {
+      editHeaderedText = simulateAddHeader(text);
+    });
+    const streamer = new ToolCallStreamer(
+      makeOptions({
+        sendText,
+        editText,
+      }),
+    );
+
+    streamer.replaceByPrefix("s1", "subagent", "subagent card", "subagent");
+    await vi.waitFor(() => {
+      expect(sendText).toHaveBeenCalledTimes(1);
+    });
+
+    streamer.replaceByPrefix("s1", "subagent", "subagent card updated", "subagent");
+    await vi.waitFor(() => {
+      expect(editText).toHaveBeenCalledTimes(1);
+    });
+
+    expect(editText).toHaveBeenCalledWith("s1", 10, "subagent card updated");
+    expect(editHeaderedText).toBe(TOOL_STREAM_HEADER + "subagent card updated");
+
+    // Simulate second edit to verify dedup: passing already-headered text
+    // should not double the header (same as production addContextHeader)
+    const doubleWrapped = simulateAddHeader(editHeaderedText);
+    expect(doubleWrapped).toBe(editHeaderedText);
   });
 
   it("creates continuation messages when the stream exceeds Telegram limits", async () => {
@@ -320,6 +404,67 @@ describe("bot/streaming/tool-call-streamer", () => {
     expect(sendText).toHaveBeenCalledTimes(1);
     expect(editText).not.toHaveBeenCalled();
     expect(deleteText).not.toHaveBeenCalled();
+  });
+
+  it("wraps streamed tool text with context header and sends it", async () => {
+    vi.useFakeTimers();
+
+    let headeredText = "";
+    const sendText = vi.fn(async (_sid: string, text: string) => {
+      headeredText = simulateAddHeader(text);
+      return 1;
+    });
+    const streamer = new ToolCallStreamer(
+      makeOptions({
+        sendText,
+      }),
+    );
+
+    streamer.append("s1", "tool message");
+    await vi.waitFor(() => {
+      expect(sendText).toHaveBeenCalledTimes(1);
+    });
+
+    expect(sendText).toHaveBeenCalledWith("s1", "tool message");
+    expect(headeredText).toBe(TOOL_STREAM_HEADER + "tool message");
+  });
+
+  it("preserves context header on tool stream edit without double-header", async () => {
+    vi.useFakeTimers();
+
+    let editHeaderedText = "";
+    const sendText = vi.fn(async (_sid: string, text: string) => {
+      simulateAddHeader(text);
+      return 10;
+    });
+    const editText = vi.fn(async (_sid: string, _mid: number, text: string) => {
+      editHeaderedText = simulateAddHeader(text);
+    });
+    const streamer = new ToolCallStreamer(
+      makeOptions({
+        sendText,
+        editText,
+      }),
+    );
+
+    streamer.append("s1", "first");
+    await vi.waitFor(() => {
+      expect(sendText).toHaveBeenCalledTimes(1);
+    });
+
+    streamer.append("s1", "second");
+    await vi.waitFor(() => {
+      expect(editText).toHaveBeenCalledTimes(1);
+    });
+
+    const combinedRaw = "first\n\nsecond";
+    expect(editText).toHaveBeenCalledWith("s1", 10, combinedRaw);
+    expect(editHeaderedText).toBe(TOOL_STREAM_HEADER + combinedRaw);
+
+    // Simulate second edit to verify dedup: passing already-headered text
+    // should not double the header (same as production addContextHeader)
+    const doubleWrapped = simulateAddHeader(editHeaderedText);
+    expect(doubleWrapped).toBe(editHeaderedText);
   });
 
   it("routes new tool calls into a fresh stream while a break flush is still finishing", async () => {

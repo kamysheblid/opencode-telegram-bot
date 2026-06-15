@@ -1,6 +1,7 @@
 import type { StreamingMessagePayload, ResponseStreamer } from "./response-streamer.js";
 import { logger } from "../../utils/logger.js";
 import type { TelegramRenderedPart } from "../render/types.js";
+import { addContextHeader } from "../messages/session-context-header.js";
 
 interface FinalizeAssistantResponseOptions {
   sessionId: string;
@@ -37,6 +38,8 @@ export async function finalizeAssistantResponse({
     `[FinalizeResponse] Final assistant raw text received: session=${sessionId}, message=${messageId}`,
     messageText,
   );
+
+  messageText = addContextHeader(messageText);
 
   const keyboard = getReplyKeyboard();
   const replyOptions = keyboard ? { reply_markup: keyboard } : undefined;

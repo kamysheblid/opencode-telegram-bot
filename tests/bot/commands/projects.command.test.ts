@@ -9,7 +9,7 @@ const mocked = vi.hoisted(() => ({
   syncSessionDirectoryCacheMock: vi.fn(),
   getProjectsMock: vi.fn(),
   getGitWorktreeContextMock: vi.fn(),
-  replyWithInlineMenuMock: vi.fn(),
+  replyWithInlineMenuFallbackMock: vi.fn(),
 }));
 
 vi.mock("../../../src/app/services/session-cache-service.js", () => ({
@@ -77,7 +77,7 @@ vi.mock("../../../src/bot/keyboards/main-reply-keyboard.js", () => ({
 vi.mock("../../../src/bot/menus/inline-menu.js", () => ({
   appendInlineMenuCancelButton: vi.fn(),
   ensureActiveInlineMenu: vi.fn(),
-  replyWithInlineMenu: mocked.replyWithInlineMenuMock,
+  replyWithInlineMenuFallback: mocked.replyWithInlineMenuFallbackMock,
 }));
 
 function createContext(): Context {
@@ -94,7 +94,7 @@ describe("bot/commands/projects command", () => {
     mocked.syncSessionDirectoryCacheMock.mockReset();
     mocked.getProjectsMock.mockReset();
     mocked.getGitWorktreeContextMock.mockReset().mockResolvedValue(null);
-    mocked.replyWithInlineMenuMock.mockReset();
+    mocked.replyWithInlineMenuFallbackMock.mockReset();
   });
 
   it("blocks projects command while foreground session is busy", async () => {
@@ -105,8 +105,30 @@ describe("bot/commands/projects command", () => {
 
     expect(mocked.syncSessionDirectoryCacheMock).not.toHaveBeenCalled();
     expect(mocked.getProjectsMock).not.toHaveBeenCalled();
-    expect(mocked.replyWithInlineMenuMock).not.toHaveBeenCalled();
+    expect(mocked.replyWithInlineMenuFallbackMock).not.toHaveBeenCalled();
     expect(ctx.reply).toHaveBeenCalledWith(t("bot.session_busy"));
+  });
+
+  it("renders project fallback text with the inline menu request", async () => {
+    mocked.currentProject = {
+      id: "project-1",
+      worktree: "/repo",
+      name: "Repo",
+    };
+    mocked.getProjectsMock.mockResolvedValue([
+      { id: "project-1", worktree: "/repo", name: "Repo" },
+      { id: "project-2", worktree: "/other", name: "Other" },
+    ]);
+
+    const ctx = createContext();
+    await projectsCommand(ctx as never);
+
+    expect(mocked.replyWithInlineMenuFallbackMock).toHaveBeenCalledWith(
+      ctx,
+      expect.objectContaining({
+        fallbackText: expect.stringContaining("1. Repo"),
+      }),
+    );
   });
 
   it("marks the main project as active when the current selection is a linked worktree", async () => {
@@ -130,7 +152,7 @@ describe("bot/commands/projects command", () => {
     const ctx = createContext();
     await projectsCommand(ctx as never);
 
-    const keyboard = mocked.replyWithInlineMenuMock.mock.calls[0]?.[1]?.keyboard as {
+    const keyboard = mocked.replyWithInlineMenuFallbackMock.mock.calls[0]?.[1]?.keyboard as {
       inline_keyboard: Array<Array<{ text: string }>>;
     };
 

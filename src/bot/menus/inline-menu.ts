@@ -2,6 +2,10 @@ import { Context, InlineKeyboard } from "grammy";
 import { interactionManager } from "../../app/managers/interaction-manager.js";
 import type { InteractionState } from "../../app/types/interaction.js";
 import { logger } from "../../utils/logger.js";
+import {
+  formatTelegramError,
+  isTelegramRetryableError,
+} from "../../utils/telegram-rate-limit-retry.js";
 import { t } from "../../i18n/index.js";
 
 export const INLINE_MENU_CANCEL_PREFIX = "inline:cancel:";
@@ -26,11 +30,12 @@ interface ActiveInlineMenuMetadata {
   messageId: number;
 }
 
-interface InlineMenuReplyOptions {
+export interface InlineMenuReplyOptions {
   menuKind: InlineMenuKind;
   text: string;
   keyboard: InlineKeyboard;
   parseMode?: "Markdown" | "HTML";
+  fallbackText?: string;
 }
 
 export function isInlineMenuKind(value: string): value is InlineMenuKind {
@@ -94,6 +99,19 @@ export function appendInlineMenuCancelButton(
   return keyboard;
 }
 
+function isInlineKeyboardSendError(error: unknown): boolean {
+  const formattedError = formatTelegramError(error).toLowerCase();
+  return (
+    formattedError.includes("button_label_invalid") ||
+    formattedError.includes("button_data_invalid") ||
+    formattedError.includes("reply markup") ||
+    formattedError.includes("keyboard") ||
+    formattedError.includes("message is too long") ||
+    formattedError.includes("too many buttons") ||
+    (!isTelegramRetryableError(error) && formattedError.includes("bad request"))
+  );
+}
+
 export async function replyWithInlineMenu(
   ctx: Context,
   options: InlineMenuReplyOptions,
@@ -126,6 +144,29 @@ export async function replyWithInlineMenu(
   );
 
   return message.message_id;
+}
+
+export async function replyWithInlineMenuFallback(
+  ctx: Context,
+  options: InlineMenuReplyOptions,
+): Promise<number> {
+  try {
+    return await replyWithInlineMenu(ctx, options);
+  } catch (error) {
+    if (!isInlineKeyboardSendError(error) || !options.fallbackText) {
+      throw error;
+    }
+
+    logger.warn(
+      `[InlineMenu] Inline menu send failed for ${options.menuKind}; sending plain-text fallback: ${formatTelegramError(error)}`,
+      error,
+    );
+
+    const message = await ctx.reply(options.fallbackText);
+    interactionManager.clear(`inline_menu_fallback:${options.menuKind}`);
+
+    return message.message_id;
+  }
 }
 
 export async function ensureActiveInlineMenu(

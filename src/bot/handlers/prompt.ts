@@ -27,6 +27,9 @@ import {
   markAttachedSessionIdle,
 } from "../../app/services/attach-service.js";
 import { externalUserInputSuppressionManager } from "../../app/managers/external-input-suppression-manager.js";
+import { type ReplyTarget } from "../messages/reply-target-resolver.js";
+import { replyDeliveryRegistry } from "../../app/managers/reply-delivery-registry.js";
+import { parseContextHeader } from "../messages/session-context-header.js";
 
 /** Module-level references for async callbacks that don't have ctx. */
 let botInstance: Bot<Context> | null = null;
@@ -125,9 +128,169 @@ export async function processUserPrompt(
   deps: ProcessPromptDeps,
   fileParts: FilePartInput[] = [],
   options: ProcessPromptOptions = {},
+  replyTarget?: ReplyTarget,
 ): Promise<boolean> {
   const { bot, ensureEventSubscription } = deps;
   const responseMode = options.responseMode ?? (isTtsEnabled() ? "text_and_tts" : "text_only");
+
+  if (replyTarget) {
+    botInstance = bot;
+    chatIdInstance = ctx.chat!.id;
+
+    const sessionIsBusy = await isSessionBusy(replyTarget.targetSessionId, replyTarget.directory);
+    if (sessionIsBusy) {
+      logger.info(
+        `[Bot] Ignoring reply prompt: target session ${replyTarget.targetSessionId} is busy`,
+      );
+      await ctx.reply(t("bot.session_busy"));
+      return false;
+    }
+
+    replyDeliveryRegistry.register({
+      stableSessionId: replyTarget.stableSessionId,
+      targetSessionId: replyTarget.targetSessionId,
+      targetDirectory: replyTarget.directory,
+      projectWorktree: replyTarget.projectWorktree,
+      projectName: replyTarget.projectName,
+      chatId: replyTarget.chatId,
+      deliveryMode: "stream" as const,
+      startedAt: Date.now(),
+    });
+
+    try {
+      const currentAgent = await resolveProjectAgent(getStoredAgent());
+      const storedModel = getStoredModel();
+
+      const parts: Array<TextPartInput | FilePartInput> = [];
+
+      let promptText = text;
+      const parsed = parseContextHeader(text);
+      if (parsed) {
+        promptText = parsed.remainingText;
+      }
+
+      if (promptText.trim().length > 0) {
+        parts.push({ type: "text", text: promptText });
+      }
+
+      parts.push(...fileParts);
+
+      if (parts.length === 0 || (parts.length > 0 && parts.every((p) => p.type === "file"))) {
+        if (fileParts.length > 0) {
+          const attachmentText =
+            fileParts.length === 1 ? "See attached file" : "See attached files";
+          parts.unshift({ type: "text", text: attachmentText });
+        }
+      }
+
+      const promptOptions: {
+        sessionID: string;
+        directory: string;
+        parts: Array<TextPartInput | FilePartInput>;
+        model?: { providerID: string; modelID: string };
+        agent?: string;
+        variant?: string;
+      } = {
+        sessionID: replyTarget.targetSessionId,
+        directory: replyTarget.directory,
+        parts,
+        agent: currentAgent,
+      };
+
+      if (storedModel.providerID && storedModel.modelID) {
+        promptOptions.model = {
+          providerID: storedModel.providerID,
+          modelID: storedModel.modelID,
+        };
+
+        if (storedModel.variant) {
+          promptOptions.variant = storedModel.variant;
+        }
+      }
+
+      const promptErrorLogContext = {
+        sessionId: replyTarget.targetSessionId,
+        directory: replyTarget.directory,
+        agent: currentAgent || "default",
+        modelProvider: storedModel.providerID || "default",
+        modelId: storedModel.modelID || "default",
+        variant: storedModel.variant || "default",
+        promptLength: promptText.length,
+        fileCount: fileParts.length,
+      };
+
+      logger.info(
+        `[Bot] Calling session.promptAsync (reply target) with agent=${currentAgent}, fileCount=${fileParts.length}...`,
+      );
+
+      foregroundSessionState.markBusy(replyTarget.targetSessionId, replyTarget.directory);
+      assistantRunState.startRun(replyTarget.targetSessionId, {
+        startedAt: Date.now(),
+        configuredAgent: currentAgent,
+        configuredProviderID: storedModel.providerID,
+        configuredModelID: storedModel.modelID,
+      });
+      setPromptResponseMode(replyTarget.targetSessionId, responseMode);
+
+      if (promptText.trim().length > 0) {
+        externalUserInputSuppressionManager.register(replyTarget.targetSessionId, promptText);
+      }
+
+      safeBackgroundTask({
+        taskName: "session.promptAsync",
+        task: () => opencodeClient.session.promptAsync(promptOptions),
+        onSuccess: ({ error }) => {
+          if (error) {
+            foregroundSessionState.markIdle(replyTarget.targetSessionId);
+            assistantRunState.clearRun(
+              replyTarget.targetSessionId,
+              "session_prompt_api_error",
+            );
+            clearPromptResponseMode(replyTarget.targetSessionId);
+            const details = formatErrorDetails(error, 6000);
+            logger.error(
+              "[Bot] OpenCode API returned an error for session.promptAsync (reply target)",
+              promptErrorLogContext,
+            );
+            logger.error("[Bot] session.promptAsync error details:", details);
+            logger.error("[Bot] session.promptAsync raw API error object:", error);
+
+            void bot.api.sendMessage(ctx.chat!.id, t("bot.prompt_send_error")).catch(() => {});
+            return;
+          }
+
+          logger.info("[Bot] session.promptAsync accepted (reply target)");
+        },
+        onError: (error) => {
+          foregroundSessionState.markIdle(replyTarget.targetSessionId);
+          assistantRunState.clearRun(
+            replyTarget.targetSessionId,
+            "session_prompt_background_error",
+          );
+          clearPromptResponseMode(replyTarget.targetSessionId);
+          const details = formatErrorDetails(error, 6000);
+          logger.error(
+            "[Bot] session.promptAsync background task failed (reply target)",
+            promptErrorLogContext,
+          );
+          logger.error("[Bot] session.promptAsync background failure details:", details);
+          logger.error("[Bot] session.promptAsync raw background error object:", error);
+          void bot.api.sendMessage(ctx.chat!.id, t("bot.prompt_send_error")).catch(() => {});
+        },
+      });
+
+      return true;
+    } catch (err) {
+      foregroundSessionState.markIdle(replyTarget.targetSessionId);
+      assistantRunState.clearRun(replyTarget.targetSessionId, "session_prompt_handler_error");
+      logger.error("Error in reply target prompt handler:", err);
+      if (interactionManager.getSnapshot()) {
+        clearAllInteractionState("message_handler_error");
+      }
+      await ctx.reply(t("error.generic"));
+      return false;
+    }
+  }
 
   const currentProject = getCurrentProject();
   if (!currentProject) {

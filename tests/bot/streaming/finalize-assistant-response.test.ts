@@ -1,4 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const mockAddContextHeader = vi.hoisted(() => vi.fn((text: string) => text));
+
+vi.mock("../../../src/bot/messages/session-context-header.js", () => ({
+  addContextHeader: mockAddContextHeader,
+}));
+
 import { finalizeAssistantResponse } from "../../../src/bot/streaming/finalize-assistant-response.js";
 
 describe("bot/streaming/finalize-assistant-response", () => {
@@ -169,5 +176,114 @@ describe("bot/streaming/finalize-assistant-response", () => {
       },
       { disable_notification: true },
     );
+  });
+
+  describe("context header prepending via addContextHeader", () => {
+    const testHeader =
+      "📁 Project: /test/proj | Test Project\n💬 Session: ses_abc | Test Session\n";
+
+    beforeEach(() => {
+      mockAddContextHeader.mockImplementation((text: string) => testHeader + text);
+    });
+
+    afterEach(() => {
+      mockAddContextHeader.mockImplementation((text: string) => text);
+    });
+
+    it("prepends context header to messageText when session and project are available", async () => {
+      const responseStreamer = {
+        complete: vi.fn().mockResolvedValue({ streamed: true, telegramMessageIds: [101] }),
+      };
+      const prepareStreamingPayload = vi.fn(() => ({
+        parts: [
+          {
+            text: "",
+            fallbackText: "",
+            source: "plain" as const,
+          },
+        ],
+      }));
+      const renderFinalParts = vi.fn(() => []);
+
+      await finalizeAssistantResponse({
+        sessionId: "ses_abc",
+        messageId: "m1",
+        messageText: "Assistant reply text.",
+        responseStreamer,
+        flushPendingServiceMessages: vi.fn().mockResolvedValue(undefined),
+        prepareStreamingPayload,
+        renderFinalParts,
+        getReplyKeyboard: vi.fn(() => undefined),
+        sendRenderedPart: vi.fn().mockResolvedValue(undefined),
+      });
+
+      expect(mockAddContextHeader).toHaveBeenCalledWith("Assistant reply text.");
+      expect(prepareStreamingPayload).toHaveBeenCalledWith(
+        testHeader + "Assistant reply text.",
+      );
+    });
+
+    it("does not prepend header when addContextHeader returns text unchanged (session missing)", async () => {
+      mockAddContextHeader.mockImplementation((text: string) => text);
+
+      const prepareStreamingPayload = vi.fn(() => ({
+        parts: [
+          {
+            text: "",
+            fallbackText: "",
+            source: "plain" as const,
+          },
+        ],
+      }));
+
+      await finalizeAssistantResponse({
+        sessionId: "s1",
+        messageId: "m1",
+        messageText: "no session",
+        responseStreamer: {
+          complete: vi.fn().mockResolvedValue({ streamed: true, telegramMessageIds: [101] }),
+        },
+        flushPendingServiceMessages: vi.fn().mockResolvedValue(undefined),
+        prepareStreamingPayload,
+        renderFinalParts: vi.fn(() => []),
+        getReplyKeyboard: vi.fn(() => undefined),
+        sendRenderedPart: vi.fn().mockResolvedValue(undefined),
+      });
+
+      expect(prepareStreamingPayload).toHaveBeenCalledWith("no session");
+    });
+
+    it("does not double-header when text already has a header", async () => {
+      mockAddContextHeader.mockImplementation((text: string) => text);
+
+      const alreadyHeadered = testHeader + "Already headered content.";
+
+      const prepareStreamingPayload = vi.fn(() => ({
+        parts: [
+          {
+            text: "",
+            fallbackText: "",
+            source: "plain" as const,
+          },
+        ],
+      }));
+
+      await finalizeAssistantResponse({
+        sessionId: "s1",
+        messageId: "m1",
+        messageText: alreadyHeadered,
+        responseStreamer: {
+          complete: vi.fn().mockResolvedValue({ streamed: true, telegramMessageIds: [101] }),
+        },
+        flushPendingServiceMessages: vi.fn().mockResolvedValue(undefined),
+        prepareStreamingPayload,
+        renderFinalParts: vi.fn(() => []),
+        getReplyKeyboard: vi.fn(() => undefined),
+        sendRenderedPart: vi.fn().mockResolvedValue(undefined),
+      });
+
+      expect(mockAddContextHeader).toHaveBeenCalledWith(alreadyHeadered);
+      expect(prepareStreamingPayload).toHaveBeenCalledWith(alreadyHeadered);
+    });
   });
 });

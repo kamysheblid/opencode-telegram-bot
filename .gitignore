@@ -23,7 +23,11 @@ Thumbs.db
 .claude/
 .kilocode/
 .opencode/
+.opencode-autopilot/
 opencode.json
+.omo/
+
+# Agent artifacts
 .omo/
 
 # Project specific

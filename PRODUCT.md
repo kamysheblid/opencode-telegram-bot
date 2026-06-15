@@ -114,6 +114,7 @@ Current command set:
 - `/opencode_start` - start local OpenCode server
 - `/opencode_stop` - stop local OpenCode server
 - `/help` - show command help
+- `/models` - list configured models and favorites/recent models
 - `/ls` - interactive file browser for the current project directory
 
 Model, agent, variant, and context actions are available from the persistent bottom keyboard.
@@ -134,6 +135,7 @@ Model picker behavior:
 - Favorites are shown first, recent models are shown after favorites
 - Models already present in favorites are not duplicated in recent
 - Default configured model (`OPENCODE_MODEL_PROVIDER` + `OPENCODE_MODEL_ID`) is treated as favorite
+- The picker is paginated and keeps a search button on the first page
 
 ### Main features already implemented
 
@@ -173,6 +175,6 @@ Model picker behavior:
 
 Open tasks for upcoming iterations:
 
-- [ ] Model search in model switcher
+- [x] Model search in model switcher
 - [ ] Docker runtime support and deployment guide
 - [ ] Add a bot settings command with in-chat UI

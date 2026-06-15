@@ -5,6 +5,7 @@ import {
   appendInlineMenuCancelButton,
   ensureActiveInlineMenu,
   replyWithInlineMenu,
+  replyWithInlineMenuFallback,
 } from "../../../src/bot/menus/inline-menu.js";
 import { handleInlineMenuCancel } from "../../../src/bot/callbacks/inline-menu-cancel-callback-handler.js";
 import { t } from "../../../src/i18n/index.js";
@@ -25,7 +26,7 @@ function createCallbackContext(data: string, messageId: number): Context {
       message: {
         message_id: messageId,
       },
-    } as Context["callbackQuery"],
+    },
     answerCallbackQuery: vi.fn().mockResolvedValue(undefined),
     deleteMessage: vi.fn().mockResolvedValue(undefined),
     reply: vi.fn().mockResolvedValue(undefined),
@@ -90,6 +91,76 @@ describe("bot/menus/inline-menu", () => {
     expect(state?.expectedInput).toBe("callback");
     expect(state?.metadata.menuKind).toBe("model");
     expect(state?.metadata.messageId).toBe(42);
+  });
+
+  it("falls back to plain text when Telegram rejects an inline keyboard", async () => {
+    const ctx = createReplyContext(42);
+    const replyMock = ctx.reply as ReturnType<typeof vi.fn>;
+    replyMock
+      .mockRejectedValueOnce({
+        status: 400,
+        description: "BUTTON_LABEL_INVALID",
+        message: "Network request for 'sendMessage' failed!",
+      })
+      .mockResolvedValueOnce({ message_id: 43 });
+    const keyboard = new InlineKeyboard().text("Model A", "model:openai:gpt-4o");
+
+    const messageId = await replyWithInlineMenuFallback(ctx, {
+      menuKind: "model",
+      text: "Select model",
+      keyboard,
+      fallbackText: "1. Model A",
+    });
+
+    expect(messageId).toBe(43);
+    expect(replyMock).toHaveBeenCalledTimes(2);
+    expect(replyMock).toHaveBeenNthCalledWith(1, "Select model", {
+      reply_markup: keyboard,
+    });
+    expect(replyMock).toHaveBeenNthCalledWith(2, "1. Model A");
+    expect(interactionManager.getSnapshot()).toBeNull();
+  });
+
+  it("does not fall back for non-inline Telegram errors", async () => {
+    const ctx = createReplyContext(42);
+    const replyMock = ctx.reply as ReturnType<typeof vi.fn>;
+    const blockedError = {
+      status: 403,
+      description: "bot was blocked by the user",
+      message: "Network request for 'sendMessage' failed!",
+    };
+    replyMock.mockRejectedValue(blockedError);
+    const keyboard = new InlineKeyboard().text("Model A", "model:openai:gpt-4o");
+
+    await expect(
+      replyWithInlineMenuFallback(ctx, {
+        menuKind: "model",
+        text: "Select model",
+        keyboard,
+        fallbackText: "1. Model A",
+      }),
+    ).rejects.toBe(blockedError);
+
+    expect(replyMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not fall back for retryable Telegram network errors", async () => {
+    const ctx = createReplyContext(42);
+    const replyMock = ctx.reply as ReturnType<typeof vi.fn>;
+    const networkError = Object.assign(new Error("fetch failed"), { code: "ECONNRESET" });
+    replyMock.mockRejectedValue(networkError);
+    const keyboard = new InlineKeyboard().text("Model A", "model:openai:gpt-4o");
+
+    await expect(
+      replyWithInlineMenuFallback(ctx, {
+        menuKind: "model",
+        text: "Select model",
+        keyboard,
+        fallbackText: "1. Model A",
+      }),
+    ).rejects.toBe(networkError);
+
+    expect(replyMock).toHaveBeenCalledTimes(1);
   });
 
   it("accepts callback from active inline menu", async () => {

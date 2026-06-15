@@ -10,8 +10,9 @@ import type {
 } from "../../app/types/interaction.js";
 import { foregroundSessionState } from "../../app/managers/foreground-session-state-manager.js";
 import { attachManager } from "../../app/managers/attach-manager.js";
+import { resolveReplyTarget } from "../messages/reply-target-resolver.js";
 
-const BUSY_ALLOWED_COMMANDS = ["/abort", "/detach", "/status", "/help"] as const;
+const BUSY_ALLOWED_COMMANDS = ["/abort", "/detach", "/sessions", "/status", "/help"] as const;
 const BUSY_ALLOWED_COMMAND_SET = new Set<string>(BUSY_ALLOWED_COMMANDS);
 
 function isBusyAllowedCommand(command?: string): boolean {
@@ -19,7 +20,7 @@ function isBusyAllowedCommand(command?: string): boolean {
 }
 
 function allowsBusyInteraction(kind: InteractionKind | undefined): boolean {
-  return kind === "question" || kind === "permission";
+  return kind === "question" || kind === "permission" || kind === "inline";
 }
 
 function normalizeIncomingCommand(text: string): string | null {
@@ -156,6 +157,20 @@ export function resolveInteractionGuardDecision(ctx: Context): GuardDecision {
       }
 
       return createBusyBlockDecision(inputType, state, "command_not_allowed", command);
+    }
+
+    // Allow reply-to-session messages targeting a non-busy session
+    if (inputType === "text" && !state) {
+      const replyTarget = resolveReplyTarget(ctx);
+      if (replyTarget) {
+        const busySessions = foregroundSessionState.getBusySessions();
+        const isTargetBusy = busySessions.some(
+          (s) => s.sessionId === replyTarget.targetSessionId,
+        );
+        if (!isTargetBusy) {
+          return createAllowDecision(inputType, null, command, true);
+        }
+      }
     }
 
     if (state && allowsBusyInteraction(state.kind)) {

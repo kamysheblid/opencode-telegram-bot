@@ -19,6 +19,7 @@ export const es: I18nDictionary = {
   "cmd.description.opencode_stop": "Detener servidor OpenCode",
   "cmd.description.ls": "Listar contenidos del directorio",
   "cmd.description.help": "Ayuda",
+  "cmd.description.models": "List all available models",
 
   "callback.unknown_command": "Comando desconocido",
   "callback.processing_error": "Error de procesamiento",
@@ -60,6 +61,8 @@ export const es: I18nDictionary = {
     "👋 ¡Bienvenido a OpenCode Telegram Bot!\n\nUsa los comandos:\n/projects — seleccionar proyecto\n/sessions — lista de sesiones\n/new — sesión nueva\n/commands — comandos personalizados\n/skills — catálogo de skills\n/task — tarea programada\n/tasklist — tareas programadas\n/status — estado\n/help — ayuda\n\nUsa los botones inferiores para elegir agente, modelo y variante.",
   "help.keyboard_hint":
     "💡 Usa los botones inferiores para agente, modelo, variante y acciones de contexto.",
+  "help.reply_routing_hint":
+    "💡 You can reply to a session's message to send a prompt directly to that session — even when it's not the current session.",
   "help.text":
     "📖 **Ayuda**\n\n/status - Ver estado del servidor\n/sessions - Lista de sesiones\n/new - Crear una sesión nueva\n/help - Ayuda",
 
@@ -72,6 +75,10 @@ export const es: I18nDictionary = {
   "bot.session_created": "✅ Sesión creada: {title}",
   "bot.session_busy":
     "⏳ El agente ya está ejecutando una tarea. Espera a que termine o usa /abort para interrumpir la ejecución actual.",
+  "bot.reply_target_invalid":
+    "⚠️ Could not recognize the target session from your reply. Reply to a bot message that shows the session context header.",
+  "bot.reply_target_missing_header":
+    "⚠️ The message you replied to doesn't contain a session header. Reply to a bot message that shows project and session info.",
   "bot.session_reset_project_mismatch":
     "⚠️ La sesión activa no coincide con el proyecto seleccionado, así que se reinició. Usa /sessions para elegir una o /new para crear una nueva.",
   "bot.prompt_send_error": "No se pudo enviar la solicitud a OpenCode.",
@@ -302,6 +309,24 @@ export const es: I18nDictionary = {
   "model.search.no_results": "No se encontraron modelos para \"{query}\"",
   "model.search.search_again": "↩ Buscar de nuevo",
   "model.search.error": "Búsqueda fallida",
+  "model.picker.button.prev_page": "⬅️ Anterior",
+  "model.picker.button.next_page": "Siguiente ➡️",
+  "model.picker.page_indicator": "Page {current}/{total}",
+
+  "models.select_mode": "📋 Select listing mode:",
+  "models.mode.all": "All configured",
+  "models.mode.favorites_recent": "⭐ Favorites + Recent",
+  "models.mode.all_header": "All configured models:",
+  "models.mode.favorites_recent_header": "Favorites + Recent:",
+  "models.unknown_mode": "Unknown listing mode.",
+  "models.empty": "📭 No models available.",
+  "models.fetch_error": "🔴 Failed to load models.",
+  "models.search.button": "🔍 Buscar",
+  "models.search.clear_filter": "✕ Limpiar filtro",
+  "models.search.error": "🔴 Búsqueda fallida",
+  "models.search.no_results": "No se encontraron modelos para \"{query}\"",
+  "models.search.prompt": "🔍 Ingresa nombre del modelo o proveedor para filtrar:",
+  "models.search.results_header": "Resultados de búsqueda para \"{query}\":",
 
   "variant.model_not_selected_callback": "Error: no hay un modelo seleccionado",
   "variant.changed_callback": "Variante cambiada: {name}",

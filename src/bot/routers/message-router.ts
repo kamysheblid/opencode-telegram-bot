@@ -7,6 +7,9 @@ import { handleTaskTextInput } from "../commands/task-command.js";
 import {
   handleModelSearchTextInput,
 } from "../callbacks/model-selection-callback-handler.js";
+import {
+  handleModelsCommandSearchTextInput,
+} from "../callbacks/models-command-callback-handler.js";
 import { handleQuestionTextAnswer } from "../callbacks/question-callback-handler.js";
 import { handleRenameTextAnswer } from "../callbacks/rename-callback-handler.js";
 import { handleContextButtonPress } from "../menus/context-control-menu.js";
@@ -22,6 +25,7 @@ import { handleDocumentMessage } from "../handlers/document-handler.js";
 import { createMediaGroupAttachmentMiddleware } from "../handlers/media-group-handler.js";
 import { handlePhotoMessage } from "../handlers/photo-handler.js";
 import { processUserPrompt } from "../handlers/prompt.js";
+import { resolveReplyTarget } from "../messages/reply-target-resolver.js";
 import { handleCatalogTextArguments } from "../handlers/text-message-handler.js";
 import { handleVoiceMessage } from "../handlers/voice-handler.js";
 import { unknownCommandMiddleware } from "../middleware/unknown-command.js";
@@ -179,6 +183,11 @@ export function registerMessageRouter(bot: Bot<Context>, deps: MessageRouterDeps
       return;
     }
 
+    const handledModelsCommandSearch = await handleModelsCommandSearchTextInput(ctx);
+    if (handledModelsCommandSearch) {
+      return;
+    }
+
     const handledRename = await handleRenameTextAnswer(ctx);
     if (handledRename) {
       return;
@@ -190,7 +199,12 @@ export function registerMessageRouter(bot: Bot<Context>, deps: MessageRouterDeps
       return;
     }
 
-    await processUserPrompt(ctx, text, promptDeps);
+    const replyTarget = resolveReplyTarget(ctx);
+    if (replyTarget) {
+      await processUserPrompt(ctx, text, promptDeps, [], {}, replyTarget);
+    } else {
+      await processUserPrompt(ctx, text, promptDeps);
+    }
 
     logger.debug("[Bot] message:text handler completed (prompt sent in background)");
   });

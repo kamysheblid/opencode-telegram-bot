@@ -30,7 +30,8 @@
     "lint": "eslint src --ext .ts --max-warnings=0",
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "smoke:telegram": "node --import tsx scripts/telegram-smoke-test.mjs"
   },
   "repository": {
     "type": "git",

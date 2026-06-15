@@ -1,19 +1,18 @@
 import { CommandContext, Context } from "grammy";
 import { getCurrentProject } from "../../app/stores/settings-store.js";
-import { replyWithInlineMenu } from "../menus/inline-menu.js";
-import { isForegroundBusy } from "../../app/services/run-control-service.js";
-import { replyBusyBlocked } from "../messages/busy-blocked-renderer.js";
+import { replyWithInlineMenuFallback } from "../menus/inline-menu.js";
 import { logger } from "../../utils/logger.js";
 import { config } from "../../config.js";
 import { t } from "../../i18n/index.js";
-import { buildSessionSelectionMenuView, loadSessionPage } from "../menus/session-selection-menu.js";
+import { formatTelegramError } from "../../utils/telegram-rate-limit-retry.js";
+import {
+  buildSessionSelectionMenuView,
+  buildSessionsFallbackText,
+  loadSessionPage,
+} from "../menus/session-selection-menu.js";
 
 export async function sessionsCommand(ctx: CommandContext<Context>) {
   try {
-    if (isForegroundBusy()) {
-      await replyBusyBlocked(ctx);
-      return;
-    }
 
     const pageSize = config.bot.sessionsListLimit;
     const currentProject = getCurrentProject();
@@ -38,14 +37,16 @@ export async function sessionsCommand(ctx: CommandContext<Context>) {
     }
 
     const { text, keyboard } = buildSessionSelectionMenuView(firstPage, pageSize);
+    const fallbackText = buildSessionsFallbackText(firstPage, pageSize);
 
-    await replyWithInlineMenu(ctx, {
+    await replyWithInlineMenuFallback(ctx, {
       menuKind: "session",
       text,
       keyboard,
+      fallbackText,
     });
   } catch (error) {
-    logger.error("[Sessions] Error fetching sessions:", error);
+    logger.error("[Sessions] Error fetching sessions:", error, formatTelegramError(error));
     await ctx.reply(t("sessions.fetch_error"));
   }
 }

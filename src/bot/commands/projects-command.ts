@@ -4,8 +4,9 @@ import { isForegroundBusy } from "../../app/services/run-control-service.js";
 import { syncSessionDirectoryCache } from "../../app/services/session-cache-service.js";
 import { t } from "../../i18n/index.js";
 import { logger } from "../../utils/logger.js";
-import { buildProjectsMenuView } from "../menus/project-selection-menu.js";
-import { replyWithInlineMenu } from "../menus/inline-menu.js";
+import { formatTelegramError } from "../../utils/telegram-rate-limit-retry.js";
+import { buildProjectsFallbackText, buildProjectsMenuView } from "../menus/project-selection-menu.js";
+import { replyWithInlineMenuFallback } from "../menus/inline-menu.js";
 import { replyBusyBlocked } from "../messages/busy-blocked-renderer.js";
 
 export async function projectsCommand(ctx: CommandContext<Context>) {
@@ -24,14 +25,16 @@ export async function projectsCommand(ctx: CommandContext<Context>) {
     }
 
     const { text, keyboard } = await buildProjectsMenuView(projects, 0);
+    const fallbackText = buildProjectsFallbackText(projects, 0);
 
-    await replyWithInlineMenu(ctx, {
+    await replyWithInlineMenuFallback(ctx, {
       menuKind: "project",
       text,
       keyboard,
+      fallbackText,
     });
   } catch (error) {
-    logger.error("[Bot] Error fetching projects:", error);
+    logger.error("[Bot] Error fetching projects:", error, formatTelegramError(error));
     await ctx.reply(t("projects.fetch_error"));
   }
 }

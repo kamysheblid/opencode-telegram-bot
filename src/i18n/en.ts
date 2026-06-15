@@ -17,6 +17,7 @@ export const en = {
   "cmd.description.opencode_stop": "Stop OpenCode server",
   "cmd.description.ls": "List directory contents",
   "cmd.description.help": "Help",
+  "cmd.description.models": "List all available models",
 
   "callback.unknown_command": "Unknown command",
   "callback.processing_error": "Processing error",
@@ -57,6 +58,8 @@ export const en = {
     "👋 Welcome to OpenCode Telegram Bot!\n\nUse commands:\n/projects — select project\n/sessions — session list\n/new — new session\n/commands — custom commands\n/skills — skills catalog\n/task — scheduled task\n/tasklist — scheduled tasks\n/status — status\n/help — help\n\nUse the bottom buttons to select the agent, model, and variant.",
   "help.keyboard_hint":
     "💡 Use the bottom keyboard buttons for the agent, model, variant, and context actions.",
+  "help.reply_routing_hint":
+    "💡 You can reply to a session's message to send a prompt directly to that session — even when it's not the current session.",
   "help.text":
     "📖 **Help**\n\n/status - Check server status\n/sessions - Session list\n/new - Create new session\n/help - Help",
 
@@ -69,6 +72,10 @@ export const en = {
   "bot.session_created": "✅ Session created: {title}",
   "bot.session_busy":
     "⏳ Agent is already running a task. Wait for completion or use /abort to interrupt current run.",
+  "bot.reply_target_invalid":
+    "⚠️ Could not recognize the target session from your reply. Reply to a bot message that shows the session context header.",
+  "bot.reply_target_missing_header":
+    "⚠️ The message you replied to doesn't contain a session header. Reply to a bot message that shows project and session info.",
   "bot.session_reset_project_mismatch":
     "⚠️ Active session does not match the selected project, so it was reset. Use /sessions to pick one or /new to create a new session.",
   "bot.prompt_send_error": "Failed to send request to OpenCode.",
@@ -288,6 +295,24 @@ export const en = {
   "model.search.no_results": "No models found for \"{query}\"",
   "model.search.search_again": "↩ Search again",
   "model.search.error": "Search failed",
+  "model.picker.button.prev_page": "⬅️ Prev",
+  "model.picker.button.next_page": "Next ➡️",
+  "model.picker.page_indicator": "Page {current}/{total}",
+
+  "models.select_mode": "📋 Select listing mode:",
+  "models.mode.all": "All configured",
+  "models.mode.favorites_recent": "⭐ Favorites + Recent",
+  "models.mode.all_header": "All configured models:",
+  "models.mode.favorites_recent_header": "Favorites + Recent:",
+  "models.unknown_mode": "Unknown listing mode.",
+  "models.empty": "📭 No models available.",
+  "models.fetch_error": "🔴 Failed to load models.",
+  "models.search.button": "🔍 Search",
+  "models.search.clear_filter": "✕ Clear filter",
+  "models.search.error": "🔴 Search failed",
+  "models.search.no_results": "No models found matching \"{query}\"",
+  "models.search.prompt": "🔍 Enter model name or provider to filter:",
+  "models.search.results_header": "Search results for \"{query}\":",
 
   "variant.model_not_selected_callback": "Error: model is not selected",
   "variant.changed_callback": "Variant changed: {name}",

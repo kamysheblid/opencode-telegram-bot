@@ -548,5 +548,89 @@ describe("app/services/model-selection-service", () => {
 
       expect(providersMock).toHaveBeenCalledTimes(1);
     });
+
+    it("forces catalog refresh when forceRefresh option is true", async () => {
+      __resetModelCatalogCacheForTests();
+      providersMock.mockClear();
+
+      await searchModels("gpt");
+      expect(providersMock).toHaveBeenCalledTimes(1);
+
+      await searchModels("gpt", { forceRefresh: true });
+      expect(providersMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("ranks exact match before generic substring", async () => {
+      __resetModelCatalogCacheForTests();
+      providersMock.mockResolvedValue(
+        createProvidersResponse({
+          openai: ["gpt-4o", "gpt-3.5"],
+          anthropic: ["claude-sonnet"],
+          google: ["gemini-pro"],
+          customProvider: ["target-model"],
+        }),
+      );
+
+      const results = await searchModels("target-model");
+
+      expect(results.length).toBeGreaterThanOrEqual(1);
+      expect(results[0]).toEqual({ providerID: "customProvider", modelID: "target-model" });
+    });
+
+    it("ranks provider-prefix matches before generic substring", async () => {
+      __resetModelCatalogCacheForTests();
+      providersMock.mockResolvedValue(
+        createProvidersResponse({
+          openai: ["gpt-4o", "gpt-3.5"],
+          openai2: ["openai-model"],
+          anthropic: ["claude-sonnet"],
+        }),
+      );
+
+      const results = await searchModels("openai");
+
+      expect(results.length).toBeGreaterThanOrEqual(3);
+      // Provider-prefix match (providerID === "openai") models come before
+      // generic substring matches (e.g., "openai2/openai-model")
+      const openaiModels = results.filter(
+        (m) => m.providerID === "openai",
+      );
+      const nonExactOpenaiModels = results.filter(
+        (m) => m.providerID !== "openai",
+      );
+
+      expect(openaiModels.length).toBeGreaterThan(0);
+      // Every openai model should appear before any non-openai model
+      if (nonExactOpenaiModels.length > 0) {
+        const lastOpenaiIndex = results.findIndex(
+          (m) => m.providerID !== "openai",
+        );
+        for (const model of openaiModels) {
+          const idx = results.indexOf(model);
+          expect(idx).toBeLessThan(lastOpenaiIndex);
+        }
+      }
+    });
+
+    it("does not call providers() for empty or whitespace query", async () => {
+      __resetModelCatalogCacheForTests();
+      providersMock.mockClear();
+
+      const results = await searchModels("   ");
+
+      expect(results).toHaveLength(0);
+      expect(providersMock).not.toHaveBeenCalled();
+    });
+
+    it("returns empty array and logs warning when provider API fails", async () => {
+      __resetModelCatalogCacheForTests();
+      providersMock.mockClear();
+      providersMock.mockResolvedValueOnce({ data: null, error: new Error("upstream failure") });
+
+      const results = await searchModels("gpt", { forceRefresh: true });
+
+      expect(results).toHaveLength(0);
+      expect(loggerWarnMock).toHaveBeenCalled();
+    });
   });
 });
