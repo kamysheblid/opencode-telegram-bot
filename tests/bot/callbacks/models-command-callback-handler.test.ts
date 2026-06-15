@@ -199,4 +199,20 @@ describe("bot/callbacks/models-command-callback-handler", () => {
     const result = await handleModelsCommandCallback(ctx);
     expect(result).toBe(false);
   });
+
+  it("handles editMessageText failure during page navigation", async () => {
+    mocked.fetchAllConfiguredItemsMock.mockResolvedValue([
+      { providerID: "openai", modelID: "gpt-4o" },
+    ]);
+
+    const ctx = createContext({
+      callbackQuery: { data: `${MODELS_LIST_CALLBACK_PREFIX}:page:all:0` },
+      editMessageText: vi.fn().mockRejectedValue(new Error("Bad Request")),
+    });
+
+    const result = await handleModelsCommandCallback(ctx);
+
+    expect(result).toBe(true);
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
 });
