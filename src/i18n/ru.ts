@@ -19,6 +19,7 @@ export const ru: I18nDictionary = {
   "cmd.description.opencode_stop": "Остановить OpenCode сервер",
   "cmd.description.ls": "Список содержимого каталога",
   "cmd.description.help": "Справка",
+  "cmd.description.models": "List all available models",
 
   "callback.unknown_command": "Неизвестная команда",
   "callback.processing_error": "Ошибка обработки",
@@ -297,6 +298,18 @@ export const ru: I18nDictionary = {
   "model.search.no_results": "Модели не найдены для \"{query}\"",
   "model.search.search_again": "↩ Искать снова",
   "model.search.error": "Ошибка поиска",
+  "model.picker.button.prev_page": "⬅️ Назад",
+  "model.picker.button.next_page": "Вперёд ➡️",
+  "model.picker.page_indicator": "Page {current}/{total}",
+
+  "models.select_mode": "📋 Select listing mode:",
+  "models.mode.all": "All configured",
+  "models.mode.favorites_recent": "⭐ Favorites + Recent",
+  "models.mode.all_header": "All configured models:",
+  "models.mode.favorites_recent_header": "Favorites + Recent:",
+  "models.unknown_mode": "Unknown listing mode.",
+  "models.empty": "📭 No models available.",
+  "models.fetch_error": "🔴 Failed to load models.",
 
   "variant.model_not_selected_callback": "Ошибка: модель не выбрана",
   "variant.changed_callback": "Вариант изменен: {name}",

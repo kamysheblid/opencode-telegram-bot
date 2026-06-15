@@ -17,6 +17,7 @@ export const en = {
   "cmd.description.opencode_stop": "Stop OpenCode server",
   "cmd.description.ls": "List directory contents",
   "cmd.description.help": "Help",
+  "cmd.description.models": "List all available models",
 
   "callback.unknown_command": "Unknown command",
   "callback.processing_error": "Processing error",
@@ -294,6 +295,18 @@ export const en = {
   "model.search.no_results": "No models found for \"{query}\"",
   "model.search.search_again": "↩ Search again",
   "model.search.error": "Search failed",
+  "model.picker.button.prev_page": "⬅️ Prev",
+  "model.picker.button.next_page": "Next ➡️",
+  "model.picker.page_indicator": "Page {current}/{total}",
+
+  "models.select_mode": "📋 Select listing mode:",
+  "models.mode.all": "All configured",
+  "models.mode.favorites_recent": "⭐ Favorites + Recent",
+  "models.mode.all_header": "All configured models:",
+  "models.mode.favorites_recent_header": "Favorites + Recent:",
+  "models.unknown_mode": "Unknown listing mode.",
+  "models.empty": "📭 No models available.",
+  "models.fetch_error": "🔴 Failed to load models.",
 
   "variant.model_not_selected_callback": "Error: model is not selected",
   "variant.changed_callback": "Variant changed: {name}",

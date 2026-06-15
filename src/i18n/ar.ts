@@ -26,6 +26,7 @@ export const ar: I18nDictionary = {
   "cmd.description.opencode_stop": "إيقاف خادم OpenCode",
   "cmd.description.ls": "استعراض ملفات المجلد",
   "cmd.description.help": "المساعدة",
+  "cmd.description.models": "List all available models",
   "cmd.description.rename": "تغيير اسم الجلسة الحالية",
   "cmd.description.open": "إضافة مشروع عبر استعراض المجلدات",
 
@@ -260,6 +261,18 @@ export const ar: I18nDictionary = {
   "model.search.no_results": "لم يتم العثور على نماذج مطابقة لـ \"{query}\"",
   "model.search.search_again": "↩ البحث مرة أخرى",
   "model.search.error": "تعذر البحث عن النماذج",
+  "model.picker.button.prev_page": "⬅️ السابق",
+  "model.picker.button.next_page": "التالي ➡️",
+  "model.picker.page_indicator": "Page {current}/{total}",
+
+  "models.select_mode": "📋 Select listing mode:",
+  "models.mode.all": "All configured",
+  "models.mode.favorites_recent": "⭐ Favorites + Recent",
+  "models.mode.all_header": "All configured models:",
+  "models.mode.favorites_recent_header": "Favorites + Recent:",
+  "models.unknown_mode": "Unknown listing mode.",
+  "models.empty": "📭 No models available.",
+  "models.fetch_error": "🔴 Failed to load models.",
 
   "variant.model_not_selected_callback": "خطأ: لم يتم تحديد النموذج",
   "variant.changed_callback": "تم تغيير الخيار إلى: {name}",

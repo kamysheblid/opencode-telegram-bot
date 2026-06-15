@@ -19,6 +19,7 @@ export const zh: I18nDictionary = {
   "cmd.description.opencode_stop": "停止 OpenCode 服务器",
   "cmd.description.ls": "列出目录内容",
   "cmd.description.help": "帮助",
+  "cmd.description.models": "List all available models",
 
   "callback.unknown_command": "未知命令",
   "callback.processing_error": "处理错误",
@@ -258,6 +259,18 @@ export const zh: I18nDictionary = {
   "model.search.no_results": "未找到 \"{query}\" 的模型",
   "model.search.search_again": "↩ 重新搜索",
   "model.search.error": "搜索失败",
+  "model.picker.button.prev_page": "⬅️ 上一页",
+  "model.picker.button.next_page": "下一页 ➡️",
+  "model.picker.page_indicator": "Page {current}/{total}",
+
+  "models.select_mode": "📋 Select listing mode:",
+  "models.mode.all": "All configured",
+  "models.mode.favorites_recent": "⭐ Favorites + Recent",
+  "models.mode.all_header": "All configured models:",
+  "models.mode.favorites_recent_header": "Favorites + Recent:",
+  "models.unknown_mode": "Unknown listing mode.",
+  "models.empty": "📭 No models available.",
+  "models.fetch_error": "🔴 Failed to load models.",
 
   "variant.model_not_selected_callback": "错误：未选择模型",
   "variant.changed_callback": "变体已更改：{name}",

@@ -19,6 +19,7 @@ export const fr: I18nDictionary = {
   "cmd.description.opencode_stop": "Arrêter le serveur OpenCode",
   "cmd.description.ls": "Lister le contenu du répertoire",
   "cmd.description.help": "Aide",
+  "cmd.description.models": "List all available models",
 
   "callback.unknown_command": "Commande inconnue",
   "callback.processing_error": "Erreur de traitement",
@@ -312,6 +313,18 @@ export const fr: I18nDictionary = {
   "model.search.no_results": "Aucun modèle trouvé pour \"{query}\"",
   "model.search.search_again": "↩ Rechercher à nouveau",
   "model.search.error": "Échec de la recherche",
+  "model.picker.button.prev_page": "⬅️ Précédent",
+  "model.picker.button.next_page": "Suivant ➡️",
+  "model.picker.page_indicator": "Page {current}/{total}",
+
+  "models.select_mode": "📋 Select listing mode:",
+  "models.mode.all": "All configured",
+  "models.mode.favorites_recent": "⭐ Favorites + Recent",
+  "models.mode.all_header": "All configured models:",
+  "models.mode.favorites_recent_header": "Favorites + Recent:",
+  "models.unknown_mode": "Unknown listing mode.",
+  "models.empty": "📭 No models available.",
+  "models.fetch_error": "🔴 Failed to load models.",
 
   "variant.model_not_selected_callback": "Erreur : aucun modèle sélectionné",
   "variant.changed_callback": "Variante modifiée : {name}",
