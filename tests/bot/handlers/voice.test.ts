@@ -4,6 +4,14 @@ import type { Context } from "grammy";
 import type { VoiceMessageDeps } from "../../../src/bot/handlers/voice-handler.js";
 import { t } from "../../../src/i18n/index.js";
 
+const mocked = vi.hoisted(() => ({
+  getTtsModeMock: vi.fn(),
+}));
+
+vi.mock("../../../src/app/stores/settings-store.js", () => ({
+  getTtsMode: mocked.getTtsModeMock,
+}));
+
 vi.mock("../../../src/utils/logger.js", () => ({
   logger: {
     debug: vi.fn(),
@@ -121,12 +129,14 @@ function mockHttpsDownload(): ReturnType<typeof vi.fn> {
 describe("bot/handlers/voice-handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocked.getTtsModeMock.mockReturnValue("off");
     vi.doUnmock("node:https");
     vi.stubEnv("TELEGRAM_BOT_TOKEN", "test-telegram-token");
     vi.stubEnv("TELEGRAM_ALLOWED_USER_ID", "123456789");
     vi.stubEnv("OPENCODE_MODEL_PROVIDER", "test-provider");
     vi.stubEnv("OPENCODE_MODEL_ID", "test-model");
     vi.stubEnv("TELEGRAM_API_ROOT", "");
+    vi.stubEnv("TELEGRAM_PROXY_URL", "");
     vi.stubEnv("STT_NOTE_PROMPT", "");
   });
 
@@ -140,7 +150,9 @@ describe("bot/handlers/voice-handler", () => {
     await handleVoiceMessage(ctx, deps);
 
     expect(replyMock).toHaveBeenCalledWith(t("stt.recognizing"));
-    expect(processPromptMock).toHaveBeenCalledWith(ctx, "run tests", deps);
+    expect(processPromptMock).toHaveBeenCalledWith(ctx, "run tests", deps, [], {
+      responseMode: "text_only",
+    });
   });
 
   it("returns not-configured message and does not process prompt", async () => {
@@ -185,10 +197,25 @@ describe("bot/handlers/voice-handler", () => {
 
     await handleVoiceMessage(ctx, deps);
 
-    expect(processPromptMock).toHaveBeenCalledWith(ctx, `[Note: ${note}]\nrun tests`, deps);
+    expect(processPromptMock).toHaveBeenCalledWith(ctx, `[Note: ${note}]\nrun tests`, deps, [], {
+      responseMode: "text_only",
+    });
     expect(logger.debug).toHaveBeenCalledWith(
       `[Voice] Added STT note to LLM prompt: [Note: ${note}]`,
     );
+  });
+
+  it("requests an audio reply for voice prompts when TTS mode is auto", async () => {
+    mocked.getTtsModeMock.mockReturnValue("auto");
+    const { handleVoiceMessage } = await loadVoiceModule();
+    const { ctx } = createVoiceContext();
+    const { deps, processPromptMock } = createVoiceDeps();
+
+    await handleVoiceMessage(ctx, deps);
+
+    expect(processPromptMock).toHaveBeenCalledWith(ctx, "run tests", deps, [], {
+      responseMode: "text_and_tts",
+    });
   });
 
   it.each(["", "false", "0", "   "])(
@@ -203,7 +230,9 @@ describe("bot/handlers/voice-handler", () => {
 
       await handleVoiceMessage(ctx, deps);
 
-      expect(processPromptMock).toHaveBeenCalledWith(ctx, "run tests", deps);
+      expect(processPromptMock).toHaveBeenCalledWith(ctx, "run tests", deps, [], {
+        responseMode: "text_only",
+      });
       expect(logger.debug).not.toHaveBeenCalled();
     },
   );
@@ -228,7 +257,9 @@ describe("bot/handlers/voice-handler", () => {
     expect(String(url)).toBe(
       "https://api.telegram.org/file/bottest-telegram-token/voice/file_123.oga",
     );
-    expect(processPromptMock).toHaveBeenCalledWith(ctx, "hello", deps);
+    expect(processPromptMock).toHaveBeenCalledWith(ctx, "hello", deps, [], {
+      responseMode: "text_only",
+    });
   });
 
   it("downloads voice files from TELEGRAM_API_ROOT without a double slash", async () => {

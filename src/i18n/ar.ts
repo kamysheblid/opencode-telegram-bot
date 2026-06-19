@@ -14,7 +14,7 @@ export const ar: I18nDictionary = {
   "cmd.description.detach": "الخروج من الجلسة دون إيقافها",
   "cmd.description.sessions": "عرض الجلسات السابقة",
   "cmd.description.messages": "استعراض رسائل الجلسة",
-  "cmd.description.tts": "تشغيل أو إيقاف الردود الصوتية",
+  "cmd.description.tts": "اختيار وضع الردود الصوتية",
   "cmd.description.projects": "عرض المشاريع",
   "cmd.description.worktree": "التبديل بين نسخ العمل في Git",
   "cmd.description.worktree_add": "Create a new git worktree",
@@ -122,8 +122,9 @@ export const ar: I18nDictionary = {
   "status.line.mode": "الوكيل: {mode}",
   "status.line.model": "النموذج: {model}",
   "status.line.tts": "الردود الصوتية: {tts}",
-  "status.tts.on": "مفعّلة",
   "status.tts.off": "معطّلة",
+  "status.tts.all": "الكل",
+  "status.tts.auto": "تلقائي",
   "status.agent_not_set": "غير محدد",
   "status.project_selected": "المشروع: {project}",
   "status.worktree_selected": "نسخة العمل: {worktree}",
@@ -134,10 +135,11 @@ export const ar: I18nDictionary = {
   "status.session_hint": "استخدم /sessions لاختيار جلسة أو /new لبدء جلسة جديدة",
   "status.server_unavailable": "🔴 خادم OpenCode غير متاح\n\nاستخدم /opencode_start لتشغيل الخادم.",
 
-  "tts.enabled": "🔊 تم تفعيل الردود الصوتية.",
-  "tts.not_configured":
-    "⚠️ الردود الصوتية غير متاحة حاليًا. اضبط `TTS_API_URL` و`TTS_API_KEY` أولًا.",
-  "tts.disabled": "🔇 تم تعطيل الردود الصوتية.",
+  "tts.prompt": "اختر وضع الردود الصوتية:",
+  "tts.off": "🔇 تم تعطيل الردود الصوتية.",
+  "tts.all": "🔊 تم تفعيل الردود الصوتية لجميع الرسائل.",
+  "tts.auto": "🎤 تم تفعيل الردود الصوتية للرسائل الصوتية فقط.",
+  "tts.not_configured": "⚠️ الردود الصوتية غير متاحة حاليًا. اضبط `TTS_API_URL` و`TTS_API_KEY` أولًا.",
   "tts.failed": "⚠️ تعذر إنشاء الرد الصوتي.",
 
   "projects.empty":

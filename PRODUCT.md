@@ -105,7 +105,7 @@ Current command set:
 - `/messages` - browse user messages in the current session
 - `/projects` - show and switch projects
 - `/worktree` - show and switch existing git worktrees for the current repository
-- `/tts` - toggle global audio replies
+- `/tts` - choose audio reply mode (`off`, `all`, or `auto`)
 - `/task` - create a scheduled task
 - `/tasklist` - browse and delete scheduled tasks
 - `/rename` - rename current session
@@ -119,7 +119,7 @@ Current command set:
 
 Model, agent, variant, and context actions are available from the persistent bottom keyboard.
 
-Text messages (non-commands) are treated as prompts for OpenCode only when no blocking interaction is active. Voice/audio messages are transcribed and then sent as prompts when STT is configured. When `/tts` is enabled globally, completed assistant replies also include a generated audio file if TTS is configured.
+Text messages (non-commands) are treated as prompts for OpenCode only when no blocking interaction is active. Voice/audio messages are transcribed and then sent as prompts when STT is configured. When `/tts` is set to `all`, completed assistant replies include a generated audio file if TTS is configured. When it is set to `auto`, audio replies are sent only after voice/audio prompts.
 
 Interaction routing rules:
 
@@ -162,7 +162,7 @@ Model picker behavior:
 - [x] PDF attachments support (send documents from Telegram to OpenCode)
 - [x] Text file attachments support (send code/config/log files from Telegram to OpenCode)
 - [x] Voice/audio transcription via Whisper-compatible APIs (OpenAI/Groq/Together and compatible providers)
-- [x] Optional global audio replies with `/tts` via OpenAI-compatible APIs
+- [x] Optional audio replies with `/tts` modes via OpenAI-compatible APIs
 - [x] Dynamic subagent activity display during task execution
 - [x] Git worktree switching and main-project status display for git repositories (`/worktree`)
 - [x] Create new OpenCode projects directly from Telegram
