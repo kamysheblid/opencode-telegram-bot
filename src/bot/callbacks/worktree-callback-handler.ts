@@ -1,9 +1,15 @@
 import type { Context } from "grammy";
-import { clearAllInteractionState } from "../../app/managers/interaction-manager.js";
+import {
+  clearAllInteractionState,
+  interactionManager,
+} from "../../app/managers/interaction-manager.js";
 import { getProjectByWorktree } from "../../app/services/project-service.js";
 import { isForegroundBusy } from "../../app/services/run-control-service.js";
 import { switchToProject } from "../../app/services/project-switch-service.js";
-import { getGitWorktreeContext } from "../../app/services/worktree-service.js";
+import {
+  createGitWorktree,
+  getGitWorktreeContext,
+} from "../../app/services/worktree-service.js";
 import { upsertSessionDirectory } from "../../app/services/session-cache-service.js";
 import { getCurrentProject } from "../../app/stores/settings-store.js";
 import { t } from "../../i18n/index.js";
@@ -123,4 +129,50 @@ export async function handleWorktreeCallback(
     await ctx.reply(t("worktree.select_error"));
     return true;
   }
+}
+
+export async function handleWorktreeAddTextAnswer(ctx: Context): Promise<boolean> {
+  const interactionState = interactionManager.getSnapshot();
+  if (interactionState?.kind !== "worktree-add") {
+    return false;
+  }
+
+  const text = ctx.message?.text;
+  if (!text || text.startsWith("/")) {
+    return false;
+  }
+
+  const name = text.trim();
+  if (!name) {
+    await ctx.reply(t("worktree_add.name_required"));
+    return true;
+  }
+
+  logger.info(`[WorktreeAddHandler] Creating worktree with name: ${name}`);
+
+  try {
+    const result = await createGitWorktree(name);
+
+    if (result.error) {
+      logger.error(`[WorktreeAddHandler] Creation failed: ${result.error}`);
+      await ctx.reply(t("worktree_add.error", { error: result.error }));
+      return true;
+    }
+
+    logger.info(`[WorktreeAddHandler] Worktree created: ${result.path}`);
+    await ctx.reply(
+      t("worktree_add.success", {
+        name,
+        api_branch: result.apiBranch ?? name,
+        path: result.path,
+      }),
+    );
+  } catch (err) {
+    logger.error("[WorktreeAddHandler] Unexpected error:", err);
+    await ctx.reply(t("worktree_add.error_generic"));
+  } finally {
+    interactionManager.clear("worktree-add-completed");
+  }
+
+  return true;
 }
