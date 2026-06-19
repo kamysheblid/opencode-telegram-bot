@@ -21,6 +21,8 @@ import {
   appendInlineMenuCancelButton,
 } from "../menus/inline-menu.js";
 import {
+  MODEL_MODE_ALL_CALLBACK,
+  MODEL_MODE_FAVORITES_CALLBACK,
   MODEL_SEARCH_AGAIN_CALLBACK,
   MODEL_SEARCH_CALLBACK,
   MODEL_SEARCH_CANCEL_CALLBACK,
@@ -31,6 +33,8 @@ import {
   buildModelSelectionMenuText,
   getAllModelsFromLists,
   calculateModelPickerRange,
+  showModelPicker,
+  resolveModelPickerData,
 } from "../menus/model-selection-menu.js";
 
 interface ModelSearchMetadata {
@@ -131,6 +135,27 @@ export async function handleModelSelect(ctx: Context): Promise<boolean> {
 
   logger.debug(`[ModelHandler] Received callback: ${callbackQuery.data}`);
 
+  // ── Mode selection (Favorites vs All Models) ──────────────────────────
+  if (
+    callbackQuery.data === MODEL_MODE_FAVORITES_CALLBACK ||
+    callbackQuery.data === MODEL_MODE_ALL_CALLBACK
+  ) {
+    const mode = callbackQuery.data === MODEL_MODE_FAVORITES_CALLBACK ? "fav" : "all";
+    logger.debug(`[ModelHandler] Mode selected: ${mode}`);
+
+    await showModelPicker(ctx, mode, 0);
+
+    // Track the mode in interaction metadata for page navigation
+    interactionManager.transition({
+      metadata: {
+        ...interactionManager.getSnapshot()?.metadata,
+        modelMode: mode,
+      },
+    });
+
+    return true;
+  }
+
   if (callbackQuery.data.startsWith(MODEL_PICKER_PAGE_PREFIX)) {
     const page = parseModelPickerPageCallback(callbackQuery.data);
     if (page === null) {
@@ -139,10 +164,12 @@ export async function handleModelSelect(ctx: Context): Promise<boolean> {
     }
 
     try {
+      // Read the current mode from interaction metadata (default to "fav")
+      const meta = interactionManager.getSnapshot();
+      const mode = (meta?.metadata?.modelMode as "fav" | "all" | undefined) ?? "fav";
+
+      const { modelLists, range } = await resolveModelPickerData(mode, page);
       const currentModel = fetchCurrentModel();
-      const modelLists = await getModelSelectionLists();
-      const combinedModels = getAllModelsFromLists(modelLists);
-      const range = calculateModelPickerRange(combinedModels.length, page, MODEL_PICKER_PAGE_SIZE);
       const keyboard = await buildModelSelectionMenu(currentModel, modelLists, range.page);
 
       appendInlineMenuCancelButton(keyboard, "model");

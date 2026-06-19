@@ -1,8 +1,10 @@
 import { Context, InlineKeyboard } from "grammy";
 import {
   fetchCurrentModel,
+  getFavoriteModels,
   getModelSelectionLists,
 } from "../../app/services/model-selection-service.js";
+import { fetchAllConfiguredItems } from "../../app/services/model-listing-service.js";
 import type {
   FavoriteModel,
   ModelInfo,
@@ -10,11 +12,16 @@ import type {
 } from "../../app/types/model.js";
 import { logger } from "../../utils/logger.js";
 import { t } from "../../i18n/index.js";
-import { replyWithInlineMenu } from "./inline-menu.js";
+import { appendInlineMenuCancelButton, replyWithInlineMenu } from "./inline-menu.js";
 
 export const MODEL_SEARCH_CALLBACK = "model:search";
 export const MODEL_SEARCH_AGAIN_CALLBACK = "model:search:again";
 export const MODEL_SEARCH_CANCEL_CALLBACK = "model:search:cancel";
+
+/** Callback for selecting Favorites mode in the model picker. */
+export const MODEL_MODE_FAVORITES_CALLBACK = "model:mode:fav";
+/** Callback for selecting All Models mode in the model picker. */
+export const MODEL_MODE_ALL_CALLBACK = "model:mode:all";
 
 // ── Picker pagination helpers ──────────────────────────────────────────
 
@@ -201,25 +208,105 @@ export async function buildModelSelectionMenu(
 }
 
 /**
- * Show model selection menu
+ * Build the mode selection keyboard (Favorites vs All Models).
+ */
+function buildModeSelectionKeyboard(): InlineKeyboard {
+  const keyboard = new InlineKeyboard();
+  keyboard.text("⭐ " + t("models.mode.favorites_recent"), MODEL_MODE_FAVORITES_CALLBACK).row();
+  keyboard.text("📋 " + t("models.mode.all"), MODEL_MODE_ALL_CALLBACK).row();
+  return keyboard;
+}
+
+/**
+ * Show model selection mode menu (Favorites vs All Models).
  */
 export async function showModelSelectionMenu(ctx: Context): Promise<void> {
   try {
-    const currentModel = fetchCurrentModel();
-    const modelLists = await getModelSelectionLists();
-    const allModels = getAllModelsFromLists(modelLists);
-    const range = calculateModelPickerRange(allModels.length, 0);
-    const keyboard = await buildModelSelectionMenu(currentModel, modelLists, 0);
-
-    const text = buildModelSelectionMenuText(modelLists, range.page, range.totalPages);
+    const keyboard = buildModeSelectionKeyboard();
 
     await replyWithInlineMenu(ctx, {
       menuKind: "model",
-      text,
+      text: t("models.select_mode"),
       keyboard,
     });
   } catch (err) {
-    logger.error("[ModelHandler] Error showing model menu:", err);
+    logger.error("[ModelHandler] Error showing model mode menu:", err);
     await ctx.reply(t("model.menu.error"));
   }
+}
+
+/**
+ * Fetch all catalog models as a ModelSelectionLists structure.
+ * Favorites are placed in the favorites list (marked with ⭐),
+ * non-favorite catalog models go into recent (marked with 🕘).
+ */
+async function fetchCatalogModelsAsSelectionLists(): Promise<ModelSelectionLists> {
+  const favorites = await getFavoriteModels();
+  const allItems = await fetchAllConfiguredItems();
+
+  const favKeys = new Set<string>();
+  for (const m of favorites) {
+    favKeys.add(`${m.providerID}:${m.modelID}`);
+  }
+
+  const recent: FavoriteModel[] = [];
+  for (const item of allItems) {
+    if (!favKeys.has(`${item.providerID}:${item.modelID}`)) {
+      recent.push({ providerID: item.providerID, modelID: item.modelID });
+    }
+  }
+
+  return { favorites, recent };
+}
+
+/**
+ * Show the model picker for a given mode.
+ *
+ * @param ctx    Telegram context from the callback query.
+ * @param mode   "fav" for favorites+recent, "all" for full catalog.
+ * @param page   0-based page number (default 0).
+ */
+export async function showModelPicker(
+  ctx: Context,
+  mode: "fav" | "all",
+  page: number = 0,
+): Promise<void> {
+  try {
+    const currentModel = fetchCurrentModel();
+    const modelLists =
+      mode === "all" ? await fetchCatalogModelsAsSelectionLists() : await getModelSelectionLists();
+
+    const allModels = getAllModelsFromLists(modelLists);
+    const range = calculateModelPickerRange(allModels.length, page);
+    const keyboard = await buildModelSelectionMenu(currentModel, modelLists, range.page);
+
+    appendInlineMenuCancelButton(keyboard, "model");
+
+    const text = buildModelSelectionMenuText(modelLists, range.page, range.totalPages);
+
+    await ctx.editMessageText(text, { reply_markup: keyboard });
+    await ctx.answerCallbackQuery().catch(() => {});
+  } catch (err) {
+    logger.error("[ModelHandler] Error showing model picker:", err);
+    await ctx.answerCallbackQuery({ text: t("model.menu.error") }).catch(() => {});
+  }
+}
+
+/**
+ * Resolve the model picker data for a given mode and page.
+ * Returns the model lists, full model array, and pagination range.
+ */
+export async function resolveModelPickerData(
+  mode: "fav" | "all",
+  page: number,
+): Promise<{
+  modelLists: ModelSelectionLists;
+  allModels: FavoriteModel[];
+  range: ModelPickerPaginationRange;
+}> {
+  const modelLists =
+    mode === "all" ? await fetchCatalogModelsAsSelectionLists() : await getModelSelectionLists();
+  const allModels = getAllModelsFromLists(modelLists);
+  const range = calculateModelPickerRange(allModels.length, page);
+  return { modelLists, allModels, range };
 }
