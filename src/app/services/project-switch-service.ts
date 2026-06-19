@@ -85,5 +85,10 @@ export async function switchToProject(
     await options.ensureEventSubscription(project.worktree);
   }
 
-  return options.presentation.createMainKeyboard(currentAgent, currentModel, contextInfo, variantName);
+  return options.presentation.createMainKeyboard(
+    currentAgent,
+    currentModel,
+    contextInfo,
+    variantName,
+  );
 }

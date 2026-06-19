@@ -26,7 +26,10 @@ export interface SkillsPaginationRange {
   endIndex: number;
 }
 
-export function formatExecutingSkillMessage(skillName: string, args: string): ExecutingSkillMessage {
+export function formatExecutingSkillMessage(
+  skillName: string,
+  args: string,
+): ExecutingSkillMessage {
   const prefix = t("skills.executing_prefix");
   const skillText = `/${skillName}`;
   const argsSuffix = args ? ` ${args}` : "";
@@ -128,7 +131,9 @@ export function buildSkillsListKeyboard(
 
   skills.slice(startIndex, endIndex).forEach((skill, index) => {
     const globalIndex = startIndex + index;
-    keyboard.text(formatSkillButtonLabel(skill), `${SKILLS_CALLBACK_SELECT_PREFIX}${globalIndex}`).row();
+    keyboard
+      .text(formatSkillButtonLabel(skill), `${SKILLS_CALLBACK_SELECT_PREFIX}${globalIndex}`)
+      .row();
   });
 
   if (totalPages > 1) {

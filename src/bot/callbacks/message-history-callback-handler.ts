@@ -1,7 +1,10 @@
 import type { Bot, Context } from "grammy";
 import { config } from "../../config.js";
 import type { InteractionState } from "../../app/types/interaction.js";
-import { clearAllInteractionState, interactionManager } from "../../app/managers/interaction-manager.js";
+import {
+  clearAllInteractionState,
+  interactionManager,
+} from "../../app/managers/interaction-manager.js";
 import { opencodeClient } from "../../opencode/client.js";
 import { setCurrentSession } from "../../app/services/session-service.js";
 import type { SessionInfo } from "../../app/types/session.js";
@@ -136,7 +139,11 @@ function parseMessagesMetadata(state: InteractionState | null): MessagesMetadata
 
   if (stage === "detail") {
     const selectedIndex = state.metadata.selectedIndex;
-    if (typeof selectedIndex !== "number" || !Number.isInteger(selectedIndex) || selectedIndex < 0) {
+    if (
+      typeof selectedIndex !== "number" ||
+      !Number.isInteger(selectedIndex) ||
+      selectedIndex < 0
+    ) {
       return null;
     }
 

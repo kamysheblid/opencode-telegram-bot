@@ -73,7 +73,9 @@ export function registerCommandRouter(bot: Bot<Context>, deps: CommandRouterDeps
   bot.command("ls", lsCommand);
   bot.command("sessions", sessionsCommand);
   bot.command("messages", messagesCommand);
-  bot.command("new", (ctx) => newCommand(ctx, { bot, ensureEventSubscription: deps.ensureEventSubscription }));
+  bot.command("new", (ctx) =>
+    newCommand(ctx, { bot, ensureEventSubscription: deps.ensureEventSubscription }),
+  );
   bot.command("abort", abortCommand);
   bot.command("detach", detachCommand);
   bot.command("task", taskCommand);

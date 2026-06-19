@@ -6,7 +6,10 @@ import { switchToProject } from "../../app/services/project-switch-service.js";
 import { t } from "../../i18n/index.js";
 import { logger } from "../../utils/logger.js";
 import { appendInlineMenuCancelButton, ensureActiveInlineMenu } from "../menus/inline-menu.js";
-import { buildProjectsMenuView, parseProjectPageCallback } from "../menus/project-selection-menu.js";
+import {
+  buildProjectsMenuView,
+  parseProjectPageCallback,
+} from "../menus/project-selection-menu.js";
 import { replyBusyBlocked } from "../messages/busy-blocked-renderer.js";
 import { createProjectSwitchPresentation } from "../services/project-switch-presentation.js";
 

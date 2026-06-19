@@ -106,10 +106,12 @@ export function parseContextHeader(text: string): ParsedContext | null {
   const sessionSepIndex = sessionRaw.indexOf(VALUE_SEPARATOR);
 
   const projectWorktree = projectSepIndex >= 0 ? projectRaw.slice(0, projectSepIndex) : projectRaw;
-  const projectDisplay = projectSepIndex >= 0 ? projectRaw.slice(projectSepIndex + VALUE_SEPARATOR.length) : projectRaw;
+  const projectDisplay =
+    projectSepIndex >= 0 ? projectRaw.slice(projectSepIndex + VALUE_SEPARATOR.length) : projectRaw;
 
   const sessionId = sessionSepIndex >= 0 ? sessionRaw.slice(0, sessionSepIndex) : sessionRaw;
-  const sessionDisplay = sessionSepIndex >= 0 ? sessionRaw.slice(sessionSepIndex + VALUE_SEPARATOR.length) : sessionRaw;
+  const sessionDisplay =
+    sessionSepIndex >= 0 ? sessionRaw.slice(sessionSepIndex + VALUE_SEPARATOR.length) : sessionRaw;
 
   if (!projectWorktree || !sessionId) {
     return null;

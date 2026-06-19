@@ -55,7 +55,9 @@ function pushEntity(state: InlineRenderState, entity: MessageEntity): void {
 }
 
 function isLocalReferenceUrl(url: string): boolean {
-  return url.startsWith("#") || url.startsWith("/") || url.startsWith("./") || url.startsWith("../");
+  return (
+    url.startsWith("#") || url.startsWith("/") || url.startsWith("./") || url.startsWith("../")
+  );
 }
 
 function appendPlainLinkTarget(state: InlineRenderState, offset: number, url: string): void {

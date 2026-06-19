@@ -10,14 +10,15 @@ import {
 import { opencodeReadyLifecycle } from "../opencode/ready-lifecycle.js";
 import { logger } from "../utils/logger.js";
 import { safeBackgroundTask } from "../utils/safe-background-task.js";
-import { formatTelegramError, withTelegramRateLimitRetry } from "../utils/telegram-rate-limit-retry.js";
+import {
+  formatTelegramError,
+  withTelegramRateLimitRetry,
+} from "../utils/telegram-rate-limit-retry.js";
 import { registerCallbackRouter } from "./callbacks/callback-router.js";
 import { authMiddleware } from "./middleware/auth.js";
 import { interactionGuardMiddleware } from "./middleware/interaction-guard.js";
-import {
-  ensureCommandsInitialized,
-  registerCommandRouter,
-} from "./routers/command-router.js";
+import { ensureCommandsInitialized, registerCommandRouter } from "./routers/command-router.js";
+import { BOT_COMMANDS } from "./commands/definitions.js";
 import { registerMessageRouter } from "./routers/message-router.js";
 import {
   createEventSubscriptionService,
@@ -130,6 +131,35 @@ export function createBot(): Bot<Context> {
   registerMessageRouter(bot, {
     ensureEventSubscription: eventSubscriptionService.ensureEventSubscription,
     setTelegramContext: eventSubscriptionService.setTelegramContext,
+  });
+
+  safeBackgroundTask({
+    taskName: "bot.initializeCommands",
+    task: async () => {
+      try {
+        await bot.api.setMyCommands(BOT_COMMANDS, {
+          scope: {
+            type: "chat",
+            chat_id: config.telegram.allowedUserId,
+          },
+        });
+        return { success: true as const };
+      } catch (error) {
+        return { success: false as const, error };
+      }
+    },
+    onSuccess: (result) => {
+      if (result.success) {
+        logger.debug("[Bot] Initialized commands for authorized chat");
+        return;
+      }
+
+      logger.warn(
+        "[Bot] Could not initialize commands for authorized chat:",
+        result.error,
+        formatTelegramError(result.error),
+      );
+    },
   });
 
   safeBackgroundTask({

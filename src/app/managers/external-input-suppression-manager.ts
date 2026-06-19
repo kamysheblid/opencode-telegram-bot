@@ -61,7 +61,9 @@ class ExternalUserInputSuppressionManager {
 
   private prune(now: number): void {
     for (const [sessionId, sessionEntries] of this.entriesBySession.entries()) {
-      const activeEntries = sessionEntries.filter((entry) => now - entry.createdAt <= SUPPRESSION_TTL_MS);
+      const activeEntries = sessionEntries.filter(
+        (entry) => now - entry.createdAt <= SUPPRESSION_TTL_MS,
+      );
       if (activeEntries.length === 0) {
         this.entriesBySession.delete(sessionId);
         continue;

@@ -5,7 +5,10 @@ import { syncSessionDirectoryCache } from "../../app/services/session-cache-serv
 import { t } from "../../i18n/index.js";
 import { logger } from "../../utils/logger.js";
 import { formatTelegramError } from "../../utils/telegram-rate-limit-retry.js";
-import { buildProjectsFallbackText, buildProjectsMenuView } from "../menus/project-selection-menu.js";
+import {
+  buildProjectsFallbackText,
+  buildProjectsMenuView,
+} from "../menus/project-selection-menu.js";
 import { replyWithInlineMenuFallback } from "../menus/inline-menu.js";
 import { replyBusyBlocked } from "../messages/busy-blocked-renderer.js";
 

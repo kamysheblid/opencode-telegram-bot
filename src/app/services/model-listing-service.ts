@@ -219,11 +219,12 @@ export function paginateItems(
   page: number,
   pageSize: number = DEFAULT_LISTING_PAGE_SIZE,
 ): ModelListingPage {
-  const { page: normalizedPage, totalPages, startIndex, endIndex } = calculateListingPagination(
-    items.length,
-    page,
-    pageSize,
-  );
+  const {
+    page: normalizedPage,
+    totalPages,
+    startIndex,
+    endIndex,
+  } = calculateListingPagination(items.length, page, pageSize);
 
   return {
     items: items.slice(startIndex, endIndex),

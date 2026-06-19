@@ -5,7 +5,10 @@ import { opencodeClient } from "../../opencode/client.js";
 import { getCurrentProject } from "../../app/stores/settings-store.js";
 import { getCurrentSession } from "../../app/services/session-service.js";
 import { summaryAggregator } from "../../app/managers/summary-aggregation-manager.js";
-import { clearPermissionInteraction, syncPermissionInteractionState } from "../menus/permission-menu.js";
+import {
+  clearPermissionInteraction,
+  syncPermissionInteractionState,
+} from "../menus/permission-menu.js";
 import { t } from "../../i18n/index.js";
 import { logger } from "../../utils/logger.js";
 import { safeBackgroundTask } from "../../utils/safe-background-task.js";

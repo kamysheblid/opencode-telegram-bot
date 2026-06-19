@@ -1,8 +1,6 @@
 import type { Api, RawApi } from "grammy";
 import { config } from "../../config.js";
-import type {
-  QueuedScheduledTaskDelivery,
-} from "../../app/types/scheduled-task.js";
+import type { QueuedScheduledTaskDelivery } from "../../app/types/scheduled-task.js";
 import type { ScheduledTaskDeliverySender } from "../../app/services/scheduled-task-runtime-service.js";
 import {
   escapePlainTextForTelegramMarkdownV2,
@@ -18,7 +16,9 @@ function getScheduledTaskDeliveryFormat(): "raw" | "markdown_v2" {
   return config.bot.messageFormatMode === "markdown" ? "markdown_v2" : "raw";
 }
 
-function getSilentDeliveryOptions(): { options: { disable_notification: true } } | Record<string, never> {
+function getSilentDeliveryOptions():
+  | { options: { disable_notification: true } }
+  | Record<string, never> {
   return config.bot.scheduledTaskNotificationsSilent
     ? { options: { disable_notification: true } }
     : {};
@@ -61,7 +61,8 @@ export function createScheduledTaskDeliverySender(
           ? buildScheduledTaskSuccessMessageParts(delivery)
           : [delivery.notificationText];
       const format = delivery.status === "success" ? getScheduledTaskDeliveryFormat() : "raw";
-      const suppressResultNotification = delivery.status === "success" && Boolean(delivery.footerText);
+      const suppressResultNotification =
+        delivery.status === "success" && Boolean(delivery.footerText);
       const resultDeliveryOptions =
         suppressResultNotification && !config.bot.scheduledTaskNotificationsSilent
           ? { options: { disable_notification: true } }

@@ -59,10 +59,7 @@ function getOptionalBooleanEnvVar(key: string, defaultValue: boolean): boolean {
   return defaultValue;
 }
 
-function getOptionalStreamingModeEnvVar(
-  key: string,
-  defaultValue: StreamingMode,
-): StreamingMode {
+function getOptionalStreamingModeEnvVar(key: string, defaultValue: StreamingMode): StreamingMode {
   const value = getEnvVar(key, false);
 
   if (!value) {
@@ -212,8 +209,7 @@ export const config = {
         : provider === "elevenlabs"
           ? "21m00Tcm4TlvDq8ikWAM"
           : "alloy";
-    const defaultModel =
-      provider === "elevenlabs" ? "eleven_flash_v2_5" : "gpt-4o-mini-tts";
+    const defaultModel = provider === "elevenlabs" ? "eleven_flash_v2_5" : "gpt-4o-mini-tts";
     return {
       apiUrl: getEnvVar("TTS_API_URL", false),
       apiKey: getEnvVar("TTS_API_KEY", false),

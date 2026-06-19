@@ -110,13 +110,8 @@ export function getAllModelsFromLists(lists: ModelSelectionLists): FavoriteModel
   return allModels;
 }
 
-function isFavorite(
-  model: FavoriteModel,
-  favorites: readonly FavoriteModel[],
-): boolean {
-  return favorites.some(
-    (f) => f.providerID === model.providerID && f.modelID === model.modelID,
-  );
+function isFavorite(model: FavoriteModel, favorites: readonly FavoriteModel[]): boolean {
+  return favorites.some((f) => f.providerID === model.providerID && f.modelID === model.modelID);
 }
 
 export function buildModelSelectionMenuText(
@@ -194,11 +189,17 @@ export async function buildModelSelectionMenu(
 
   if (range.totalPages > 1) {
     if (range.page > 0) {
-      keyboard.text(t("model.picker.button.prev_page"), buildModelPickerPageCallback(range.page - 1));
+      keyboard.text(
+        t("model.picker.button.prev_page"),
+        buildModelPickerPageCallback(range.page - 1),
+      );
     }
 
     if (range.page < range.totalPages - 1) {
-      keyboard.text(t("model.picker.button.next_page"), buildModelPickerPageCallback(range.page + 1));
+      keyboard.text(
+        t("model.picker.button.next_page"),
+        buildModelPickerPageCallback(range.page + 1),
+      );
     }
 
     keyboard.row();

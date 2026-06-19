@@ -31,7 +31,9 @@ async function refreshContextLimitCache(): Promise<void> {
 
       if (error || !data) {
         if (isExpectedOpencodeUnavailableError(error)) {
-          logger.warn("[ModelContextLimit] OpenCode server unavailable; using default context limit");
+          logger.warn(
+            "[ModelContextLimit] OpenCode server unavailable; using default context limit",
+          );
         } else {
           logger.warn("[ModelContextLimit] Failed to fetch providers:", error);
         }

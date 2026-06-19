@@ -1,7 +1,5 @@
 import { Context, InlineKeyboard } from "grammy";
-import {
-  MODELS_LIST_CALLBACK_PREFIX,
-} from "../commands/models-command.js";
+import { MODELS_LIST_CALLBACK_PREFIX } from "../commands/models-command.js";
 import {
   fetchAllConfiguredItems,
   fetchFavoritesRecentItems,
@@ -34,23 +32,29 @@ function buildModelsListKeyboard(
   const keyboard = new InlineKeyboard();
 
   for (const [index, item] of items.entries()) {
-    keyboard.text(
-      `${item.providerID}/${item.modelID}`,
-      `${MODELS_LIST_CALLBACK_PREFIX}:select:${mode}:${index}`,
-    ).row();
+    keyboard
+      .text(
+        `${item.providerID}/${item.modelID}`,
+        `${MODELS_LIST_CALLBACK_PREFIX}:select:${mode}:${index}`,
+      )
+      .row();
   }
 
   // Search / Clear filter row — always present
   if (mode === MODELS_SEARCH_ACTION) {
-    keyboard.text(
-      t("models.search.clear_filter"),
-      `${MODELS_LIST_CALLBACK_PREFIX}:${MODELS_SEARCH_ACTION}:clear`,
-    ).row();
+    keyboard
+      .text(
+        t("models.search.clear_filter"),
+        `${MODELS_LIST_CALLBACK_PREFIX}:${MODELS_SEARCH_ACTION}:clear`,
+      )
+      .row();
   } else {
-    keyboard.text(
-      t("models.search.button"),
-      `${MODELS_LIST_CALLBACK_PREFIX}:${MODELS_SEARCH_ACTION}:${mode}`,
-    ).row();
+    keyboard
+      .text(
+        t("models.search.button"),
+        `${MODELS_LIST_CALLBACK_PREFIX}:${MODELS_SEARCH_ACTION}:${mode}`,
+      )
+      .row();
   }
 
   if (totalPages > 1) {
@@ -121,10 +125,12 @@ export async function handleModelsCommandCallback(ctx: Context): Promise<boolean
         return true;
       }
 
-      const header = mode === "all" ? t("models.mode.all_header") : t("models.mode.favorites_recent_header");
-      const pageInfo = page.totalPages > 1
-        ? `\n\n${t("model.picker.page_indicator", { current: 1, total: page.totalPages })}`
-        : "";
+      const header =
+        mode === "all" ? t("models.mode.all_header") : t("models.mode.favorites_recent_header");
+      const pageInfo =
+        page.totalPages > 1
+          ? `\n\n${t("model.picker.page_indicator", { current: 1, total: page.totalPages })}`
+          : "";
 
       let keyboard: InlineKeyboard;
       try {
@@ -167,12 +173,23 @@ export async function handleModelsCommandCallback(ctx: Context): Promise<boolean
             items = await fetchFavoritesRecentItems();
           }
           const page = paginateItems(items, 0, DEFAULT_LISTING_PAGE_SIZE);
-          const header = originalMode === "all" ? t("models.mode.all_header") : t("models.mode.favorites_recent_header");
-          const pageInfo = page.totalPages > 1
-            ? `\n\n${t("model.picker.page_indicator", { current: 1, total: page.totalPages })}`
-            : "";
-          const keyboard = buildModelsListKeyboard(page.items, page.page, page.totalPages, originalMode);
-          await ctx.editMessageText(`${header}${pageInfo}`, { reply_markup: keyboard }).catch(() => {});
+          const header =
+            originalMode === "all"
+              ? t("models.mode.all_header")
+              : t("models.mode.favorites_recent_header");
+          const pageInfo =
+            page.totalPages > 1
+              ? `\n\n${t("model.picker.page_indicator", { current: 1, total: page.totalPages })}`
+              : "";
+          const keyboard = buildModelsListKeyboard(
+            page.items,
+            page.page,
+            page.totalPages,
+            originalMode,
+          );
+          await ctx
+            .editMessageText(`${header}${pageInfo}`, { reply_markup: keyboard })
+            .catch(() => {});
         } else {
           await ctx.editMessageText(t("models.select_mode")).catch(() => {});
         }
@@ -274,11 +291,15 @@ export async function handleModelsCommandCallback(ctx: Context): Promise<boolean
         return true;
       }
 
-      const header = displayMode === "all" ? t("models.mode.all_header") : t("models.mode.favorites_recent_header");
+      const header =
+        displayMode === "all"
+          ? t("models.mode.all_header")
+          : t("models.mode.favorites_recent_header");
       const effectiveMode = mode === MODELS_SEARCH_ACTION ? MODELS_SEARCH_ACTION : mode;
-      const pageInfo = page.totalPages > 1
-        ? `\n\n${t("model.picker.page_indicator", { current: page.page + 1, total: page.totalPages })}`
-        : "";
+      const pageInfo =
+        page.totalPages > 1
+          ? `\n\n${t("model.picker.page_indicator", { current: page.page + 1, total: page.totalPages })}`
+          : "";
 
       // Add search context to header
       const fullHeader = searchQuery
@@ -451,7 +472,10 @@ export async function handleModelsCommandSearchTextInput(ctx: Context): Promise<
     if (page.items.length === 0) {
       // Show "no results" with a way to search again
       const keyboard = new InlineKeyboard();
-      keyboard.text(t("models.search.clear_filter"), `${MODELS_LIST_CALLBACK_PREFIX}:${MODELS_SEARCH_ACTION}:clear`);
+      keyboard.text(
+        t("models.search.clear_filter"),
+        `${MODELS_LIST_CALLBACK_PREFIX}:${MODELS_SEARCH_ACTION}:clear`,
+      );
       await ctx.reply(t("models.search.no_results", { query: text }), { reply_markup: keyboard });
 
       interactionManager.transition({
@@ -467,14 +491,23 @@ export async function handleModelsCommandSearchTextInput(ctx: Context): Promise<
     }
 
     // Build response text and keyboard
-    const header = listingMode === "all" ? t("models.mode.all_header") : t("models.mode.favorites_recent_header");
+    const header =
+      listingMode === "all"
+        ? t("models.mode.all_header")
+        : t("models.mode.favorites_recent_header");
     const searchHeader = t("models.search.results_header", { query: text });
-    const pageInfo = page.totalPages > 1
-      ? `\n\n${t("model.picker.page_indicator", { current: 1, total: page.totalPages })}`
-      : "";
+    const pageInfo =
+      page.totalPages > 1
+        ? `\n\n${t("model.picker.page_indicator", { current: 1, total: page.totalPages })}`
+        : "";
     const fullText = `${searchHeader}\n\n${header}${pageInfo}`;
 
-    const keyboard = buildModelsListKeyboard(page.items, page.page, page.totalPages, MODELS_SEARCH_ACTION);
+    const keyboard = buildModelsListKeyboard(
+      page.items,
+      page.page,
+      page.totalPages,
+      MODELS_SEARCH_ACTION,
+    );
 
     await ctx.reply(fullText, { reply_markup: keyboard });
 

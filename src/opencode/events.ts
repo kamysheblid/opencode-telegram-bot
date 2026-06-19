@@ -163,7 +163,11 @@ function normalizeGlobalEvent(rawEvent: unknown, directory: string): Event | nul
   return rawEvent.payload;
 }
 
-function normalizeEvent(rawEvent: unknown, source: EventStreamSource, directory: string): Event | null {
+function normalizeEvent(
+  rawEvent: unknown,
+  source: EventStreamSource,
+  directory: string,
+): Event | null {
   if (source === "global") {
     return normalizeGlobalEvent(rawEvent, directory);
   }
@@ -237,7 +241,10 @@ export async function subscribeToEvents(directory: string, callback: EventCallba
         attemptAbort = createAttemptAbortController(controller.signal);
         if (useLegacyEventsOnce) {
           useLegacyEventsOnce = false;
-          subscription = await subscribeToLegacyEventStream(directory, attemptAbort.controller.signal);
+          subscription = await subscribeToLegacyEventStream(
+            directory,
+            attemptAbort.controller.signal,
+          );
         } else {
           try {
             subscription = await subscribeToGlobalEventStream(attemptAbort.controller.signal);
@@ -255,7 +262,10 @@ export async function subscribeToEvents(directory: string, callback: EventCallba
               `Global event stream unavailable for ${directory}, falling back to project event stream`,
               error,
             );
-            subscription = await subscribeToLegacyEventStream(directory, attemptAbort.controller.signal);
+            subscription = await subscribeToLegacyEventStream(
+              directory,
+              attemptAbort.controller.signal,
+            );
           }
         }
 

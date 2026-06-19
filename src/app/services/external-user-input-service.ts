@@ -34,13 +34,13 @@ function buildQuotedPlainText(text: string): string {
 function buildQuotedMarkdownText(text: string): string {
   return text
     .split("\n")
-    .map((line) =>
-      line.length > 0 ? `> ${escapePlainTextForTelegramMarkdownV2(line)}` : ">",
-    )
+    .map((line) => (line.length > 0 ? `> ${escapePlainTextForTelegramMarkdownV2(line)}` : ">"))
     .join("\n");
 }
 
-export function buildExternalUserInputNotification(text: string): ExternalUserInputNotification | null {
+export function buildExternalUserInputNotification(
+  text: string,
+): ExternalUserInputNotification | null {
   const normalizedText = normalizeExternalUserInputText(text);
   if (!normalizedText) {
     return null;

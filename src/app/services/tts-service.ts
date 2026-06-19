@@ -21,9 +21,7 @@ interface PrepareTtsResponseParams {
   synthesizeSpeech?: (text: string) => Promise<TtsResult>;
 }
 
-export type PreparedTtsResponse =
-  | { shouldSend: false }
-  | { shouldSend: true; speech: TtsResult };
+export type PreparedTtsResponse = { shouldSend: false } | { shouldSend: true; speech: TtsResult };
 
 export function isTtsConfigured(): boolean {
   if (config.tts.provider === "google") {

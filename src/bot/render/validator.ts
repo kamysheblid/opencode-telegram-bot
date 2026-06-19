@@ -66,7 +66,10 @@ function isStyleEntity(entity: MessageEntity): boolean {
 }
 
 function isLoopbackHttpHostname(hostname: string): boolean {
-  const normalized = hostname.toLowerCase().replace(/^\[(.*)]$/, "$1").replace(/\.$/, "");
+  const normalized = hostname
+    .toLowerCase()
+    .replace(/^\[(.*)]$/, "$1")
+    .replace(/\.$/, "");
 
   return (
     normalized === "localhost" ||

@@ -5,7 +5,10 @@ import { isForegroundBusy } from "../../app/services/run-control-service.js";
 import { t } from "../../i18n/index.js";
 import { clearLsPathIndex, renderLsBrowseView } from "../menus/file-browser-menu.js";
 import { replyBusyBlocked } from "../messages/busy-blocked-renderer.js";
-import { rememberLsDirectory, resolveInitialLsDirectory } from "../callbacks/file-browser-callback-handler.js";
+import {
+  rememberLsDirectory,
+  resolveInitialLsDirectory,
+} from "../callbacks/file-browser-callback-handler.js";
 
 export async function lsCommand(ctx: CommandContext<Context>): Promise<void> {
   if (isForegroundBusy()) {

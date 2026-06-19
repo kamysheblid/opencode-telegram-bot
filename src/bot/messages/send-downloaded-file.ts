@@ -24,16 +24,22 @@ export async function sendDownloadedFile(
   try {
     const stat = await fs.stat(filePath).catch(() => null);
     if (!stat) {
-      await ctx.reply(`❌ ${t("commands.download.not_found")}: <code>${escapeHtml(filePath)}</code>`, {
-        parse_mode: "HTML",
-      });
+      await ctx.reply(
+        `❌ ${t("commands.download.not_found")}: <code>${escapeHtml(filePath)}</code>`,
+        {
+          parse_mode: "HTML",
+        },
+      );
       return false;
     }
 
     if (!stat.isFile()) {
-      await ctx.reply(`❌ ${t("commands.download.not_file")}: <code>${escapeHtml(filePath)}</code>`, {
-        parse_mode: "HTML",
-      });
+      await ctx.reply(
+        `❌ ${t("commands.download.not_file")}: <code>${escapeHtml(filePath)}</code>`,
+        {
+          parse_mode: "HTML",
+        },
+      );
       return false;
     }
 
@@ -47,9 +53,12 @@ export async function sendDownloadedFile(
     const fileName = path.basename(filePath);
 
     if (options?.announce !== false) {
-      await ctx.reply(`📥 ${t("commands.download.downloading")} <code>${escapeHtml(fileName)}</code>`, {
-        parse_mode: "HTML",
-      });
+      await ctx.reply(
+        `📥 ${t("commands.download.downloading")} <code>${escapeHtml(fileName)}</code>`,
+        {
+          parse_mode: "HTML",
+        },
+      );
     }
 
     const fileContent = await fs.readFile(filePath);

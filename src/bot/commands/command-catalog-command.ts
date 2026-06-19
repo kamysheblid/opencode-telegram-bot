@@ -5,7 +5,10 @@ import { loadCommandCatalog } from "../../app/services/command-catalog-service.j
 import { getCurrentProject } from "../../app/stores/settings-store.js";
 import { t } from "../../i18n/index.js";
 import { logger } from "../../utils/logger.js";
-import { buildCommandsListKeyboard, formatCommandsSelectText } from "../menus/command-catalog-menu.js";
+import {
+  buildCommandsListKeyboard,
+  formatCommandsSelectText,
+} from "../menus/command-catalog-menu.js";
 
 export async function commandsCommand(ctx: CommandContext<Context>): Promise<void> {
   try {

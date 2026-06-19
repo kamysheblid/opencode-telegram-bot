@@ -111,7 +111,10 @@ export function buildMcpsDetailText(server: McpCatalogServerItem): string {
     lines.push(t("mcps.detail.error", { error: server.status.error }));
   }
 
-  if (server.status.status === "needs_auth" || server.status.status === "needs_client_registration") {
+  if (
+    server.status.status === "needs_auth" ||
+    server.status.status === "needs_client_registration"
+  ) {
     lines.push("");
     lines.push(t("mcps.auth_required"));
   }

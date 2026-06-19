@@ -245,10 +245,7 @@ function rotateInstalledLogIfNeeded(): void {
     ensureLogStream(nextLogFilePath);
     cleanupOldLogsInBackground(runtimePaths.logsDirPath, mode);
   } catch (error) {
-    reportLoggerInternalError(
-      `Failed to rotate file logging to ${nextLogFilePath}.`,
-      error,
-    );
+    reportLoggerInternalError(`Failed to rotate file logging to ${nextLogFilePath}.`, error);
     closeLogStream();
     logFilePath = null;
   }

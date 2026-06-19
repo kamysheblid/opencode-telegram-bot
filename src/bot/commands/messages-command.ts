@@ -8,7 +8,10 @@ import { getCurrentProject } from "../../app/stores/settings-store.js";
 import { t } from "../../i18n/index.js";
 import { logger } from "../../utils/logger.js";
 import { replyBusyBlocked } from "../messages/busy-blocked-renderer.js";
-import { buildMessagesListKeyboard, formatMessagesSelectText } from "../menus/message-history-menu.js";
+import {
+  buildMessagesListKeyboard,
+  formatMessagesSelectText,
+} from "../menus/message-history-menu.js";
 
 export async function messagesCommand(ctx: CommandContext<Context>): Promise<void> {
   try {

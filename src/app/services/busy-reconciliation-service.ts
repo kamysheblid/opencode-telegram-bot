@@ -65,10 +65,7 @@ function isTerminalStatus(status: SessionStatus | null): boolean {
   return !status || status.type === "idle" || status.type === "error";
 }
 
-function isWithinForegroundBusyGracePeriod(
-  session: ForegroundBusySession,
-  now: number,
-): boolean {
+function isWithinForegroundBusyGracePeriod(session: ForegroundBusySession, now: number): boolean {
   return now - session.markedAt < FOREGROUND_BUSY_RECONCILE_GRACE_MS;
 }
 
@@ -78,7 +75,10 @@ async function clearForegroundBusySession(sessionId: string, reason: string): Pr
   clearPromptResponseModeForReconciliation?.(sessionId);
 }
 
-export async function reconcileBusyStateNow(directory: string, now: number = Date.now()): Promise<void> {
+export async function reconcileBusyStateNow(
+  directory: string,
+  now: number = Date.now(),
+): Promise<void> {
   if (!directory) {
     return;
   }
@@ -151,7 +151,10 @@ export async function reconcileBusyStateNow(directory: string, now: number = Dat
   }
 }
 
-export async function reconcileBusyState(directory: string, now: number = Date.now()): Promise<void> {
+export async function reconcileBusyState(
+  directory: string,
+  now: number = Date.now(),
+): Promise<void> {
   if (!directory || inFlightDirectories.has(directory)) {
     return;
   }

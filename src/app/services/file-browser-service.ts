@@ -283,7 +283,9 @@ function isSamePath(leftPath: string, rightPath: string): boolean {
 export function isPathWithinDirectory(targetPath: string, directoryPath: string): boolean {
   const pathApi = getPathApi(directoryPath);
   const relativePath = pathApi.relative(directoryPath, targetPath);
-  return relativePath === "" || (!relativePath.startsWith("..") && !pathApi.isAbsolute(relativePath));
+  return (
+    relativePath === "" || (!relativePath.startsWith("..") && !pathApi.isAbsolute(relativePath))
+  );
 }
 
 export function getProjectRoot(): string | null {
@@ -311,11 +313,13 @@ export async function scanLsDirectory(
 
     const dirEntries = await fs.readdir(dirPath, { withFileTypes: true });
     const entries: LsEntry[] = dirEntries
-      .map((entry): LsEntry => ({
-        name: entry.name,
-        fullPath: joinPath(dirPath, entry.name),
-        type: entry.isDirectory() ? "directory" : "file",
-      }))
+      .map(
+        (entry): LsEntry => ({
+          name: entry.name,
+          fullPath: joinPath(dirPath, entry.name),
+          type: entry.isDirectory() ? "directory" : "file",
+        }),
+      )
       .sort((left, right) => {
         if (left.type !== right.type) {
           return left.type === "directory" ? -1 : 1;

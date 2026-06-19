@@ -1,7 +1,11 @@
 import { Bot, Context } from "grammy";
 import type { FilePartInput, TextPartInput } from "@opencode-ai/sdk/v2";
 import { opencodeClient } from "../../opencode/client.js";
-import { clearSession, getCurrentSession, setCurrentSession } from "../../app/services/session-service.js";
+import {
+  clearSession,
+  getCurrentSession,
+  setCurrentSession,
+} from "../../app/services/session-service.js";
 import { ingestSessionInfoForCache } from "../../app/services/session-cache-service.js";
 import { getCurrentProject, isTtsEnabled } from "../../app/stores/settings-store.js";
 import { getStoredAgent, resolveProjectAgent } from "../../app/services/agent-selection-service.js";
@@ -242,10 +246,7 @@ export async function processUserPrompt(
         onSuccess: ({ error }) => {
           if (error) {
             foregroundSessionState.markIdle(replyTarget.targetSessionId);
-            assistantRunState.clearRun(
-              replyTarget.targetSessionId,
-              "session_prompt_api_error",
-            );
+            assistantRunState.clearRun(replyTarget.targetSessionId, "session_prompt_api_error");
             clearPromptResponseMode(replyTarget.targetSessionId);
             const details = formatErrorDetails(error, 6000);
             logger.error(

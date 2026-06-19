@@ -192,7 +192,10 @@ export async function editRenderedBotPart({
       deliveredSignature: getTelegramRenderedPartSignature(part),
     };
   } catch (error) {
-    logger.warn("[Bot] Entity payload edit failed, retrying assistant edit part in raw mode", error);
+    logger.warn(
+      "[Bot] Entity payload edit failed, retrying assistant edit part in raw mode",
+      error,
+    );
     await api.editMessageText(chatId, messageId, part.fallbackText, rawOptions);
     logger.debug("[Bot] Assistant edit part applied in raw fallback mode", {
       messageId,

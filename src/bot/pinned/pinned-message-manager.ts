@@ -463,7 +463,9 @@ class PinnedMessageManager {
 
       if (error || !messagesData) {
         if (isExpectedOpencodeUnavailableError(error)) {
-          logger.debug("[PinnedManager] OpenCode server unavailable; skipping diff message restore");
+          logger.debug(
+            "[PinnedManager] OpenCode server unavailable; skipping diff message restore",
+          );
         } else {
           logger.debug(`[PinnedManager] loadDiffsFromMessages: error or no data`);
         }

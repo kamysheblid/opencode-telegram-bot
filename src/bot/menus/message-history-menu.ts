@@ -125,7 +125,9 @@ export function buildMessagesListKeyboard(
 
   messages.slice(startIndex, endIndex).forEach((message, index) => {
     const globalIndex = startIndex + index;
-    keyboard.text(formatMessageButtonLabel(message), `${MESSAGES_CALLBACK_SELECT_PREFIX}${globalIndex}`).row();
+    keyboard
+      .text(formatMessageButtonLabel(message), `${MESSAGES_CALLBACK_SELECT_PREFIX}${globalIndex}`)
+      .row();
   });
 
   if (totalPages > 1) {

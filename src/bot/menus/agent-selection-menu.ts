@@ -1,5 +1,8 @@
 import { Context, InlineKeyboard } from "grammy";
-import { fetchCurrentAgent, getAvailableAgents } from "../../app/services/agent-selection-service.js";
+import {
+  fetchCurrentAgent,
+  getAvailableAgents,
+} from "../../app/services/agent-selection-service.js";
 import { getAgentDisplayName } from "../../app/types/agent.js";
 import { logger } from "../../utils/logger.js";
 import { t } from "../../i18n/index.js";

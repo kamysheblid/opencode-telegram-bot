@@ -61,7 +61,10 @@ import { showCurrentQuestion } from "../menus/question-menu.js";
 import { showPermissionRequest } from "../menus/permission-menu.js";
 import { clearAllInteractionState } from "../../app/managers/interaction-manager.js";
 import { stopEventListening, subscribeToEvents } from "../../opencode/events.js";
-import { replyDeliveryRegistry, type ReplyTargetInfo } from "../../app/managers/reply-delivery-registry.js";
+import {
+  replyDeliveryRegistry,
+  type ReplyTargetInfo,
+} from "../../app/managers/reply-delivery-registry.js";
 
 const TELEGRAM_DOCUMENT_CAPTION_MAX_LENGTH = 1024;
 const RESPONSE_STREAM_THROTTLE_MS = config.bot.responseStreamThrottleMs;
@@ -199,11 +202,7 @@ class EventSubscriptionService implements BotEventSubscriptionService {
 
         try {
           const headeredText = addContextHeader(text);
-          await this.botInstance.api.editMessageText(
-            this.chatIdInstance,
-            messageId,
-            headeredText,
-          );
+          await this.botInstance.api.editMessageText(this.chatIdInstance, messageId, headeredText);
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
@@ -489,7 +488,9 @@ class EventSubscriptionService implements BotEventSubscriptionService {
         await this.toolCallStreamer.breakSession(fileInfo.sessionId, "tool_file_boundary");
 
         const toolMessage = formatToolInfo(fileInfo);
-        const caption = this.prepareDocumentCaption(addContextHeader(toolMessage || fileInfo.fileData.caption));
+        const caption = this.prepareDocumentCaption(
+          addContextHeader(toolMessage || fileInfo.fileData.caption),
+        );
 
         this.toolMessageBatcher.enqueueFile(fileInfo.sessionId, {
           ...fileInfo.fileData,
@@ -527,7 +528,9 @@ class EventSubscriptionService implements BotEventSubscriptionService {
         clearAllInteractionState("question_replaced_by_new_poll");
       }
 
-      logger.info(`[Bot] Received ${questions.length} questions from agent, requestID=${requestID}`);
+      logger.info(
+        `[Bot] Received ${questions.length} questions from agent, requestID=${requestID}`,
+      );
       questionManager.startQuestions(questions, requestID);
       await showCurrentQuestion(this.botInstance.api, this.chatIdInstance);
     });
@@ -971,9 +974,11 @@ class EventSubscriptionService implements BotEventSubscriptionService {
 
     switch (event.type) {
       case "message.part.updated": {
-        const part = (event.properties as {
-          part?: { sessionID?: string; messageID?: string; type?: string; text?: string };
-        }).part;
+        const part = (
+          event.properties as {
+            part?: { sessionID?: string; messageID?: string; type?: string; text?: string };
+          }
+        ).part;
         if (
           part?.type === "text" &&
           part.sessionID &&
@@ -1001,7 +1006,16 @@ class EventSubscriptionService implements BotEventSubscriptionService {
       }
 
       case "message.updated": {
-        const info = (event.properties as { info?: { role?: string; time?: { completed?: number }; id?: string; sessionID?: string } }).info;
+        const info = (
+          event.properties as {
+            info?: {
+              role?: string;
+              time?: { completed?: number };
+              id?: string;
+              sessionID?: string;
+            };
+          }
+        ).info;
         if (info?.role === "assistant" && info.time?.completed && info.sessionID && info.id) {
           const accumulatedText = this.getAndClearReplyTargetText(info.sessionID, info.id);
           if (accumulatedText?.trim()) {
@@ -1096,7 +1110,10 @@ class EventSubscriptionService implements BotEventSubscriptionService {
     return prepareAssistantFinalStreamingPayload(messageText, RESPONSE_STREAM_TEXT_LIMIT);
   }
 
-  private enqueueSessionCompletionTask(sessionId: string, task: () => Promise<void>): Promise<void> {
+  private enqueueSessionCompletionTask(
+    sessionId: string,
+    task: () => Promise<void>,
+  ): Promise<void> {
     const previousTask = this.sessionCompletionTasks.get(sessionId) ?? Promise.resolve();
     const nextTask = previousTask
       .catch(() => undefined)

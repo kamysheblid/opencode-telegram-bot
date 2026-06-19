@@ -1113,12 +1113,12 @@ class SummaryAggregator {
           });
         }
 
-          this.cleanupCompletedMessage(messageID);
+        this.cleanupCompletedMessage(messageID);
 
-          logger.debug(
-            `[Aggregator] Message completed cleanup: remaining messages=${this.textMessageStates.size}`,
-          );
-        }
+        logger.debug(
+          `[Aggregator] Message completed cleanup: remaining messages=${this.textMessageStates.size}`,
+        );
+      }
 
       this.lastUpdated = Date.now();
     }
@@ -1404,7 +1404,10 @@ class SummaryAggregator {
   }
 
   private emitExternalUserInputIfReady(sessionId: string, messageId: string): void {
-    if (sessionId !== this.currentSessionId || this.deliveredExternalUserMessageIds.has(messageId)) {
+    if (
+      sessionId !== this.currentSessionId ||
+      this.deliveredExternalUserMessageIds.has(messageId)
+    ) {
       return;
     }
 

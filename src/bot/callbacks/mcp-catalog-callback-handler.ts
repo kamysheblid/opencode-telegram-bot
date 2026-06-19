@@ -1,9 +1,6 @@
 import type { Context } from "grammy";
 import type { McpCatalogServerItem } from "../../app/services/mcp-catalog-service.js";
-import {
-  loadMcpCatalog,
-  toggleMcpCatalogServer,
-} from "../../app/services/mcp-catalog-service.js";
+import { loadMcpCatalog, toggleMcpCatalogServer } from "../../app/services/mcp-catalog-service.js";
 import { interactionManager } from "../../app/managers/interaction-manager.js";
 import type { InteractionState } from "../../app/types/interaction.js";
 import { logger } from "../../utils/logger.js";

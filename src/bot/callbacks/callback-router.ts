@@ -19,15 +19,9 @@ import { handlePermissionCallback } from "./permission-callback-handler.js";
 import { handleProjectSelect } from "./project-callback-handler.js";
 import { handleQuestionCallback } from "./question-callback-handler.js";
 import { handleRenameCancel } from "./rename-callback-handler.js";
-import {
-  handleBackgroundSessionOpen,
-  handleSessionSelect,
-} from "./session-callback-handler.js";
+import { handleBackgroundSessionOpen, handleSessionSelect } from "./session-callback-handler.js";
 import { handleSkillsCallback } from "./skills-catalog-callback-handler.js";
-import {
-  handleTaskCallback,
-  handleTaskListCallback,
-} from "./scheduled-task-callback-handler.js";
+import { handleTaskCallback, handleTaskListCallback } from "./scheduled-task-callback-handler.js";
 import { handleVariantSelect } from "./variant-selection-callback-handler.js";
 import { handleWorktreeCallback } from "./worktree-callback-handler.js";
 import { clearLsPathIndex, clearOpenPathIndex } from "../menus/file-browser-menu.js";

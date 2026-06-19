@@ -15,7 +15,10 @@ import { reconcileStoredModelSelection } from "../services/model-selection-servi
 import { getRuntimeMode } from "../../runtime/mode.js";
 import { getRuntimePaths } from "../../runtime/paths.js";
 import { clearServiceStateFile } from "../../runtime/service/manager.js";
-import { getServiceStateFilePathFromEnv, isServiceChildProcess } from "../../runtime/service/env.js";
+import {
+  getServiceStateFilePathFromEnv,
+  isServiceChildProcess,
+} from "../../runtime/service/env.js";
 import { getLogFilePath, initializeLogger, logger } from "../../utils/logger.js";
 import { safeBackgroundTask } from "../../utils/safe-background-task.js";
 import {
@@ -44,7 +47,10 @@ async function getBotVersion(): Promise<string> {
 
 function getExponentialDelayMs(attempt: number): number {
   const exponent = Math.max(0, attempt - 1);
-  const cappedDelay = Math.min(TELEGRAM_STARTUP_BASE_DELAY_MS * 2 ** exponent, TELEGRAM_STARTUP_MAX_DELAY_MS);
+  const cappedDelay = Math.min(
+    TELEGRAM_STARTUP_BASE_DELAY_MS * 2 ** exponent,
+    TELEGRAM_STARTUP_MAX_DELAY_MS,
+  );
   const jitter = Math.floor(cappedDelay * 0.2 * Math.random());
 
   return Math.max(1, cappedDelay + jitter);

@@ -13,7 +13,6 @@ import {
 
 export async function sessionsCommand(ctx: CommandContext<Context>) {
   try {
-
     const pageSize = config.bot.sessionsListLimit;
     const currentProject = getCurrentProject();
 

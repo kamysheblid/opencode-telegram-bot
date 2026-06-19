@@ -23,7 +23,10 @@ export type SessionPage = {
   page: number;
 };
 
-export type BackgroundSessionOpenKind = "assistant_response" | "question_asked" | "permission_asked";
+export type BackgroundSessionOpenKind =
+  | "assistant_response"
+  | "question_asked"
+  | "permission_asked";
 
 export interface BackgroundSessionCallbackPayload {
   sessionId: string;

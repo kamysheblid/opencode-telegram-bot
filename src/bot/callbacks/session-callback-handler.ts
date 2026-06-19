@@ -4,7 +4,10 @@ import { resolveProjectAgent } from "../../app/services/agent-selection-service.
 import { setCurrentSession } from "../../app/services/session-service.js";
 import type { SessionInfo } from "../../app/types/session.js";
 import { getCurrentProject } from "../../app/stores/settings-store.js";
-import { clearAllInteractionState, interactionManager } from "../../app/managers/interaction-manager.js";
+import {
+  clearAllInteractionState,
+  interactionManager,
+} from "../../app/managers/interaction-manager.js";
 import { keyboardManager } from "../keyboards/keyboard-manager.js";
 import { appendInlineMenuCancelButton, ensureActiveInlineMenu } from "../menus/inline-menu.js";
 import { logger } from "../../utils/logger.js";
@@ -125,7 +128,10 @@ async function selectSessionById(
       try {
         await ctx.api.deleteMessage(ctx.chat!.id, loadingMessageId);
       } catch (deleteError) {
-        logger.debug("[Sessions] Failed to delete loading message after follow error:", deleteError);
+        logger.debug(
+          "[Sessions] Failed to delete loading message after follow error:",
+          deleteError,
+        );
       }
     }
     logger.error("[Sessions] Error following selected session:", err);
@@ -178,7 +184,8 @@ async function selectSessionById(
     if (options.postSelectAction === "latest_assistant_response") {
       safeBackgroundTask({
         taskName: "sessions.sendLatestAssistantResponse",
-        task: () => sendLatestAssistantResponse(ctx.api, chatId, session.id, currentProject.worktree),
+        task: () =>
+          sendLatestAssistantResponse(ctx.api, chatId, session.id, currentProject.worktree),
       });
     }
   }
@@ -212,7 +219,9 @@ export async function handleBackgroundSessionOpen(
   }
 
   if (shouldBlockBackgroundSessionOpen()) {
-    await ctx.answerCallbackQuery({ text: t("interaction.blocked.finish_current") }).catch(() => {});
+    await ctx
+      .answerCallbackQuery({ text: t("interaction.blocked.finish_current") })
+      .catch(() => {});
     return true;
   }
 
@@ -221,13 +230,14 @@ export async function handleBackgroundSessionOpen(
       source: "background_notification",
       deleteCallbackMessage: false,
       removeCallbackReplyMarkup: true,
-      postSelectAction: payload.kind === "assistant_response" ? "latest_assistant_response" : "none",
+      postSelectAction:
+        payload.kind === "assistant_response" ? "latest_assistant_response" : "none",
     });
   } catch (error) {
     logger.error("[Sessions] Error selecting background session:", error);
-    await ctx.answerCallbackQuery({ text: t("sessions.select_error"), show_alert: true }).catch(
-      () => {},
-    );
+    await ctx
+      .answerCallbackQuery({ text: t("sessions.select_error"), show_alert: true })
+      .catch(() => {});
   }
 
   return true;

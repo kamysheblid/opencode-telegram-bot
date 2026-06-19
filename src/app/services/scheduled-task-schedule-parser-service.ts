@@ -188,7 +188,9 @@ export async function parseTaskSchedule(
 
     sessionId = session.id;
     await registerScheduledTaskSessionIgnore(session.id);
-    logger.debug(`[ScheduledTaskScheduleParser] Created temporary session: sessionId=${session.id}`);
+    logger.debug(
+      `[ScheduledTaskScheduleParser] Created temporary session: sessionId=${session.id}`,
+    );
 
     const { data: response, error: promptError } = await opencodeClient.session.prompt({
       sessionID: session.id,

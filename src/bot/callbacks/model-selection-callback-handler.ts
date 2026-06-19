@@ -66,10 +66,7 @@ function parseModelSearchMetadata(): ModelSearchMetadata | null {
  * Shared logic for applying a model selection and updating UI.
  * Used by both the regular inline menu flow and the search results flow.
  */
-async function applyModelSelectionAndNotify(
-  ctx: Context,
-  modelInfo: ModelInfo,
-): Promise<void> {
+async function applyModelSelectionAndNotify(ctx: Context, modelInfo: ModelInfo): Promise<void> {
   if (ctx.chat) {
     keyboardManager.initialize(ctx.api, ctx.chat.id);
   }
