@@ -294,8 +294,8 @@ export const ru: I18nDictionary = {
   "model.menu.error": "🔴 Не удалось получить список моделей",
   "model.search.button": "🔍 Поиск",
   "model.search.prompt": "🔍 Введите название модели для поиска:",
-  "model.search.results_title": "Результаты поиска для \"{query}\":",
-  "model.search.no_results": "Модели не найдены для \"{query}\"",
+  "model.search.results_title": 'Результаты поиска для "{query}":',
+  "model.search.no_results": 'Модели не найдены для "{query}"',
   "model.search.search_again": "↩ Искать снова",
   "model.search.error": "Ошибка поиска",
   "model.picker.button.prev_page": "⬅️ Назад",
@@ -313,9 +313,9 @@ export const ru: I18nDictionary = {
   "models.search.button": "🔍 Поиск",
   "models.search.clear_filter": "✕ Сбросить фильтр",
   "models.search.error": "🔴 Поиск не удался",
-  "models.search.no_results": "Модели не найдены по запросу \"{query}\"",
+  "models.search.no_results": 'Модели не найдены по запросу "{query}"',
   "models.search.prompt": "🔍 Введите название модели или провайдера для фильтрации:",
-  "models.search.results_header": "Результаты поиска по запросу \"{query}\":",
+  "models.search.results_header": 'Результаты поиска по запросу "{query}":',
 
   "variant.model_not_selected_callback": "Ошибка: модель не выбрана",
   "variant.changed_callback": "Вариант изменен: {name}",
@@ -583,6 +583,7 @@ export const ru: I18nDictionary = {
   "mcps.auth_required": "Этот сервер требует авторизации и не может быть включен из бота.",
 
   "cmd.description.rename": "Переименовать текущую сессию",
+  "cmd.description.worktree_add": "Create a new git worktree",
 
   "legacy.models.fetch_error":
     "🔴 Не удалось получить список моделей. Проверьте статус сервера /status.",
@@ -615,6 +616,32 @@ export const ru: I18nDictionary = {
   "worktree.selected":
     "✅ Выбран worktree: {worktree}\n\n📋 Сессия была сброшена. Используйте /sessions или /new для продолжения.",
   "worktree.select_error": "🔴 Не удалось выбрать worktree.",
+
+  "worktree_add.no_project":
+    "🏗 Project is not selected.\n\nFirst select a project with /projects.",
+  "worktree_add.not_git_repo": "🌿 Current project is not a git repository.",
+  "worktree_add.name_required":
+    "⚠️ Worktree name is required.\n\nUsage: /worktree_add <name>\nOr send the name as a message.",
+  "worktree_add.name_prompt": "🌿 Enter a name for the new worktree:",
+  "worktree_add.confirm": "🌿 Create a new worktree?\n\nName: {name}\nPath: {path}",
+  "worktree_add.confirm_no_path":
+    "🌿 Create a new worktree?\n\nName: {name}\nPath: auto (default)",
+  "worktree_add.button.create": "✅ Create",
+  "worktree_add.button.cancel": "❌ Cancel",
+  "worktree_add.button.switch": "🔄 Switch to it",
+  "worktree_add.creating": '⏳ Creating worktree "{name}"...',
+  "worktree_add.success": "✅ Worktree created successfully!\n\nName: {name}\nBranch: {api_branch}\nPath: {path}",
+  "worktree_add.error": "🔴 Failed to create worktree:\n{error}",
+  "worktree_add.error_generic": "🔴 An error occurred while creating the worktree.",
+  "worktree_add.cancelled": "❌ Worktree creation cancelled.",
+  "worktree_add.switched": "✅ Switched to new worktree: {path}",
+  "worktree_add.inactive": "⚠️ Worktree creation is not active. Run /worktree_add again.",
+  "worktree_add.inactive_callback": "This worktree creation flow is inactive",
+  "worktree_add.blocked.expected_input": "⚠️ Send the worktree name as a text message or tap Cancel.",
+  "worktree_add.blocked.command_not_allowed":
+    "⚠️ This command is not available while worktree creation is active.",
+  "worktree_add.fetch_error": "🔴 Failed to load worktrees after creation.",
+
   "open.back": "⬆️ Наверх",
   "open.roots": "📋 К списку корней",
   "open.prev_page": "⬅️ Назад",

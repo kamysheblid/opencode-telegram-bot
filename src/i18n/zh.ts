@@ -10,6 +10,7 @@ export const zh: I18nDictionary = {
   "cmd.description.tts": "切换语音回复",
   "cmd.description.projects": "列出项目",
   "cmd.description.worktree": "切换 git worktree",
+  "cmd.description.worktree_add": "Create a new git worktree",
   "cmd.description.task": "创建定时任务",
   "cmd.description.tasklist": "查看定时任务",
   "cmd.description.commands": "自定义命令",
@@ -53,7 +54,8 @@ export const zh: I18nDictionary = {
   "start.welcome":
     "👋 欢迎使用 OpenCode Telegram Bot！\n\n可用命令：\n/projects — 选择项目\n/sessions — 会话列表\n/new — 新建会话\n/commands — 自定义命令\n/skills — 技能目录\n/task — 定时任务\n/tasklist — 定时任务列表\n/status — 状态\n/help — 帮助\n\n请使用底部按钮选择 Agent、模型和变体。",
   "help.keyboard_hint": "💡 Agent、模型、变体和上下文操作请使用底部键盘按钮。",
-  "help.reply_routing_hint": "💡 You can reply to a session's message to send a prompt directly to that session — even when it's not the current session.",
+  "help.reply_routing_hint":
+    "💡 You can reply to a session's message to send a prompt directly to that session — even when it's not the current session.",
   "help.text":
     "📖 **帮助**\n\n/status - 查看服务器状态\n/sessions - 会话列表\n/new - 创建新会话\n/help - 帮助",
 
@@ -63,8 +65,10 @@ export const zh: I18nDictionary = {
   "bot.create_session_error": "🔴 创建会话失败。请重试 /new，或使用 /status 检查服务器状态。",
   "bot.session_created": "✅ 会话已创建：{title}",
   "bot.session_busy": "⏳ 代理正在执行任务。请等待完成，或使用 /abort 中断当前运行。",
-  "bot.reply_target_invalid": "⚠️ Could not recognize the target session from your reply. Reply to a bot message that shows the session context header.",
-  "bot.reply_target_missing_header": "⚠️ The message you replied to doesn't contain a session header. Reply to a bot message that shows project and session info.",
+  "bot.reply_target_invalid":
+    "⚠️ Could not recognize the target session from your reply. Reply to a bot message that shows the session context header.",
+  "bot.reply_target_missing_header":
+    "⚠️ The message you replied to doesn't contain a session header. Reply to a bot message that shows project and session info.",
   "bot.session_reset_project_mismatch":
     "⚠️ 活动会话与所选项目不匹配，因此已重置。使用 /sessions 选择一个会话，或 /new 创建新会话。",
   "bot.prompt_send_error": "向 OpenCode 发送请求失败。",
@@ -87,7 +91,8 @@ export const zh: I18nDictionary = {
   "bot.file_too_large": "⚠️ 文件过大（最大 {maxSizeMb}MB）",
   "bot.file_download_error": "🔴 下载文件失败",
   "bot.file_type_unsupported": "⚠️ 不支持此文件类型。请发送图片、PDF 或文本/代码文件。",
-  "bot.media_group_not_processed": "⚠️ 此相册中有一个或多个文件无法处理。未向 OpenCode 发送任何内容。",
+  "bot.media_group_not_processed":
+    "⚠️ 此相册中有一个或多个文件无法处理。未向 OpenCode 发送任何内容。",
   "bot.media_group_download_error": "🔴 无法下载其中一个文件。未向 OpenCode 发送任何内容。",
   "bot.model_no_pdf": "⚠️ 当前模型不支持PDF输入。将仅发送文本。",
   "bot.text_file_too_large": "⚠️ 文本文件过大（最大 {maxSizeKb}KB）",
@@ -255,8 +260,8 @@ export const zh: I18nDictionary = {
   "model.menu.error": "🔴 获取模型列表失败",
   "model.search.button": "🔍 搜索",
   "model.search.prompt": "🔍 输入模型名称进行搜索：",
-  "model.search.results_title": "\"{query}\" 的搜索结果：",
-  "model.search.no_results": "未找到 \"{query}\" 的模型",
+  "model.search.results_title": '"{query}" 的搜索结果：',
+  "model.search.no_results": '未找到 "{query}" 的模型',
   "model.search.search_again": "↩ 重新搜索",
   "model.search.error": "搜索失败",
   "model.picker.button.prev_page": "⬅️ 上一页",
@@ -274,9 +279,9 @@ export const zh: I18nDictionary = {
   "models.search.button": "🔍 搜索",
   "models.search.clear_filter": "✕ 清除筛选",
   "models.search.error": "🔴 搜索失败",
-  "models.search.no_results": "未找到匹配 \"{query}\" 的模型",
+  "models.search.no_results": '未找到匹配 "{query}" 的模型',
   "models.search.prompt": "🔍 输入模型名称或提供商进行筛选：",
-  "models.search.results_header": "搜索 \"{query}\" 的结果：",
+  "models.search.results_header": '搜索 "{query}" 的结果：',
 
   "variant.model_not_selected_callback": "错误：未选择模型",
   "variant.changed_callback": "变体已更改：{name}",
@@ -553,6 +558,32 @@ export const zh: I18nDictionary = {
   "worktree.selected":
     "✅ 已选择 worktree：{worktree}\n\n📋 会话已重置。请使用 /sessions 或 /new 继续。",
   "worktree.select_error": "🔴 选择 worktree 失败。",
+
+  "worktree_add.no_project":
+    "🏗 Project is not selected.\n\nFirst select a project with /projects.",
+  "worktree_add.not_git_repo": "🌿 Current project is not a git repository.",
+  "worktree_add.name_required":
+    "⚠️ Worktree name is required.\n\nUsage: /worktree_add <name>\nOr send the name as a message.",
+  "worktree_add.name_prompt": "🌿 Enter a name for the new worktree:",
+  "worktree_add.confirm": "🌿 Create a new worktree?\n\nName: {name}\nPath: {path}",
+  "worktree_add.confirm_no_path":
+    "🌿 Create a new worktree?\n\nName: {name}\nPath: auto (default)",
+  "worktree_add.button.create": "✅ Create",
+  "worktree_add.button.cancel": "❌ Cancel",
+  "worktree_add.button.switch": "🔄 Switch to it",
+  "worktree_add.creating": '⏳ Creating worktree "{name}"...',
+  "worktree_add.success": "✅ Worktree created successfully!\n\nName: {name}\nBranch: {api_branch}\nPath: {path}",
+  "worktree_add.error": "🔴 Failed to create worktree:\n{error}",
+  "worktree_add.error_generic": "🔴 An error occurred while creating the worktree.",
+  "worktree_add.cancelled": "❌ Worktree creation cancelled.",
+  "worktree_add.switched": "✅ Switched to new worktree: {path}",
+  "worktree_add.inactive": "⚠️ Worktree creation is not active. Run /worktree_add again.",
+  "worktree_add.inactive_callback": "This worktree creation flow is inactive",
+  "worktree_add.blocked.expected_input": "⚠️ Send the worktree name as a text message or tap Cancel.",
+  "worktree_add.blocked.command_not_allowed":
+    "⚠️ This command is not available while worktree creation is active.",
+  "worktree_add.fetch_error": "🔴 Failed to load worktrees after creation.",
+
   "open.back": "⬆️ 上级",
   "open.roots": "📋 返回根目录",
   "open.prev_page": "⬅️ 上一页",

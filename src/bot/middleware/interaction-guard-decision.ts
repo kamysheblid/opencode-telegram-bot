@@ -1,5 +1,6 @@
 import type { Context } from "grammy";
 import { interactionManager } from "../../app/managers/interaction-manager.js";
+
 import type {
   BlockReason,
   ExpectedInput,
@@ -164,9 +165,7 @@ export function resolveInteractionGuardDecision(ctx: Context): GuardDecision {
       const replyTarget = resolveReplyTarget(ctx);
       if (replyTarget) {
         const busySessions = foregroundSessionState.getBusySessions();
-        const isTargetBusy = busySessions.some(
-          (s) => s.sessionId === replyTarget.targetSessionId,
-        );
+        const isTargetBusy = busySessions.some((s) => s.sessionId === replyTarget.targetSessionId);
         if (!isTargetBusy) {
           return createAllowDecision(inputType, null, command, true);
         }
