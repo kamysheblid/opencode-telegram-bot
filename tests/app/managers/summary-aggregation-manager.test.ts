@@ -28,6 +28,7 @@ describe("summary/aggregator", () => {
     summaryAggregator.setOnPartial(() => {});
     summaryAggregator.setOnExternalUserInput(() => {});
     summaryAggregator.setOnThinking(() => {});
+    summaryAggregator.setOnThinkingFinished(() => {});
     summaryAggregator.setOnSubagent(() => {});
     summaryAggregator.setOnSessionIdle(() => {});
     summaryAggregator.setOnSessionError(() => {});
@@ -573,7 +574,7 @@ describe("summary/aggregator", () => {
     expect(onToolFile).not.toHaveBeenCalled();
   });
 
-  it("passes sessionId to thinking callback when reasoning part arrives", async () => {
+  it("passes reasoning sections to thinking callback when reasoning part arrives", async () => {
     const onThinking = vi.fn();
     summaryAggregator.setOnThinking(onThinking);
     summaryAggregator.setSession("session-1");
@@ -606,7 +607,213 @@ describe("summary/aggregator", () => {
 
     await new Promise<void>((resolve) => setImmediate(resolve));
 
-    expect(onThinking).toHaveBeenCalledWith("session-1");
+    expect(onThinking).toHaveBeenCalledWith({
+      sessionId: "session-1",
+      messageId: "message-1",
+      isFirstUpdate: true,
+      sections: [
+        {
+          id: "part-reasoning-1",
+          text: "Let me think about this...",
+        },
+      ],
+    });
+  });
+
+  it("streams explicit reasoning deltas without adding them to assistant text", async () => {
+    const onThinking = vi.fn();
+    const onPartial = vi.fn();
+    const onComplete = vi.fn();
+    summaryAggregator.setOnThinking(onThinking);
+    summaryAggregator.setOnPartial(onPartial);
+    summaryAggregator.setOnComplete(onComplete);
+    summaryAggregator.setSession("session-1");
+
+    summaryAggregator.processEvent({
+      type: "message.updated",
+      properties: {
+        info: {
+          id: "message-reasoning-delta",
+          sessionID: "session-1",
+          role: "assistant",
+          time: { created: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          id: "reasoning-delta-part",
+          sessionID: "session-1",
+          messageID: "message-reasoning-delta",
+          type: "reasoning",
+          title: "Analysis",
+          text: "First ",
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.part.delta",
+      properties: {
+        part: {
+          id: "reasoning-delta-part",
+          sessionID: "session-1",
+          messageID: "message-reasoning-delta",
+          type: "reasoning",
+        },
+        delta: "second",
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          id: "answer-part",
+          sessionID: "session-1",
+          messageID: "message-reasoning-delta",
+          type: "text",
+          text: "Final answer.",
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.updated",
+      properties: {
+        info: {
+          id: "message-reasoning-delta",
+          sessionID: "session-1",
+          role: "assistant",
+          time: { created: Date.now(), completed: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    await new Promise<void>((resolve) => setImmediate(resolve));
+
+    expect(onThinking).toHaveBeenLastCalledWith({
+      sessionId: "session-1",
+      messageId: "message-reasoning-delta",
+      isFirstUpdate: false,
+      sections: [
+        {
+          id: "reasoning-delta-part",
+          title: "Analysis",
+          text: "First second",
+        },
+      ],
+    });
+    expect(onPartial).toHaveBeenCalledWith("session-1", "message-reasoning-delta", "Final answer.");
+    expect(onComplete).toHaveBeenCalledWith(
+      "session-1",
+      "message-reasoning-delta",
+      "Final answer.",
+      expect.any(Object),
+    );
+  });
+
+  it("signals thinking finished once when assistant text starts after reasoning", async () => {
+    const onThinkingFinished = vi.fn();
+    summaryAggregator.setOnThinkingFinished(onThinkingFinished);
+    summaryAggregator.setSession("session-1");
+
+    summaryAggregator.processEvent({
+      type: "message.updated",
+      properties: {
+        info: {
+          id: "message-thinking-finished",
+          sessionID: "session-1",
+          role: "assistant",
+          time: { created: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          id: "reasoning-part",
+          sessionID: "session-1",
+          messageID: "message-thinking-finished",
+          type: "reasoning",
+          text: "Thinking...",
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          id: "text-part",
+          sessionID: "session-1",
+          messageID: "message-thinking-finished",
+          type: "text",
+          text: "Answer start",
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.part.delta",
+      properties: {
+        part: {
+          id: "text-part",
+          sessionID: "session-1",
+          messageID: "message-thinking-finished",
+          type: "text",
+        },
+        delta: " continues",
+      },
+    } as unknown as Event);
+
+    await new Promise<void>((resolve) => setImmediate(resolve));
+
+    expect(onThinkingFinished).toHaveBeenCalledTimes(1);
+    expect(onThinkingFinished).toHaveBeenCalledWith(
+      "session-1",
+      "message-thinking-finished",
+    );
+  });
+
+  it("does not signal thinking finished for assistant text without reasoning", async () => {
+    const onThinkingFinished = vi.fn();
+    summaryAggregator.setOnThinkingFinished(onThinkingFinished);
+    summaryAggregator.setSession("session-1");
+
+    summaryAggregator.processEvent({
+      type: "message.updated",
+      properties: {
+        info: {
+          id: "message-no-thinking-finished",
+          sessionID: "session-1",
+          role: "assistant",
+          time: { created: Date.now() },
+        },
+      },
+    } as unknown as Event);
+
+    summaryAggregator.processEvent({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          id: "text-part",
+          sessionID: "session-1",
+          messageID: "message-no-thinking-finished",
+          type: "text",
+          text: "Answer only",
+        },
+      },
+    } as unknown as Event);
+
+    await new Promise<void>((resolve) => setImmediate(resolve));
+
+    expect(onThinkingFinished).not.toHaveBeenCalled();
   });
 
   it("streams partial text and passes messageId on completion", () => {
@@ -1152,7 +1359,7 @@ describe("summary/aggregator", () => {
     expect(onThinking).not.toHaveBeenCalled();
   });
 
-  it("fires thinking callback only once per message even with multiple reasoning parts", async () => {
+  it("streams all reasoning parts and marks only the first thinking update", async () => {
     const onThinking = vi.fn();
     summaryAggregator.setOnThinking(onThinking);
     summaryAggregator.setSession("session-1");
@@ -1187,8 +1394,27 @@ describe("summary/aggregator", () => {
 
     await new Promise<void>((resolve) => setImmediate(resolve));
 
-    expect(onThinking).toHaveBeenCalledTimes(1);
-    expect(onThinking).toHaveBeenCalledWith("session-1");
+    expect(onThinking).toHaveBeenCalledTimes(3);
+    expect(onThinking.mock.calls[0][0]).toEqual(
+      expect.objectContaining({
+        sessionId: "session-1",
+        messageId: "message-multi-reasoning",
+        isFirstUpdate: true,
+        sections: [{ id: "part-reasoning-0", text: "Thinking step 0" }],
+      }),
+    );
+    expect(onThinking.mock.calls[2][0]).toEqual(
+      expect.objectContaining({
+        sessionId: "session-1",
+        messageId: "message-multi-reasoning",
+        isFirstUpdate: false,
+        sections: [
+          { id: "part-reasoning-0", text: "Thinking step 0" },
+          { id: "part-reasoning-1", text: "Thinking step 1" },
+          { id: "part-reasoning-2", text: "Thinking step 2" },
+        ],
+      }),
+    );
   });
 
   it("reports session.error message through callback", async () => {
